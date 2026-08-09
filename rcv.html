@@ -10,8 +10,13 @@
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
 >
 
-<title>QR Text Receiver</title>
+<title>Dense QR Text Receiver</title>
 
+<!--
+    html5-qrcode:
+    - Uses native BarcodeDetector where supported.
+    - Falls back to its normal QR decoding pipeline.
+-->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
@@ -24,10 +29,12 @@
         --border: #2d3a58;
         --text: #edf2ff;
         --muted: #a2aec4;
+
         --primary: #4f8cff;
         --success: #22c55e;
         --danger: #ef4444;
         --warning: #f59e0b;
+
         --missing: #26324a;
     }
 
@@ -39,18 +46,15 @@
             --border: #d7deea;
             --text: #182033;
             --muted: #64748b;
+
             --primary: #2563eb;
             --success: #16a34a;
             --danger: #dc2626;
             --warning: #d97706;
+
             --missing: #e5eaf1;
         }
     }
-    @media (max-width: 600px) {
-    #reader {
-        min-height: 430px;
-    }
-}
 
     * {
         box-sizing: border-box;
@@ -59,8 +63,10 @@
     body {
         margin: 0;
         min-height: 100vh;
+
         background: var(--bg);
         color: var(--text);
+
         font-family:
             system-ui,
             -apple-system,
@@ -70,14 +76,14 @@
     }
 
     .app {
-        width: min(100%, 900px);
+        width: min(100%, 960px);
         margin: 0 auto;
         padding: 16px;
     }
 
     h1 {
         margin: 0 0 8px;
-        font-size: clamp(1.6rem, 5vw, 2.2rem);
+        font-size: clamp(1.6rem, 5vw, 2.3rem);
     }
 
     .subtitle {
@@ -90,6 +96,7 @@
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 16px;
+
         padding: 16px;
         margin-bottom: 16px;
     }
@@ -97,11 +104,14 @@
     .label {
         display: block;
         margin-bottom: 8px;
-        font-size: 0.82rem;
-        font-weight: 700;
+
+        font-size: 0.8rem;
+        font-weight: 800;
+
         color: var(--muted);
+
         text-transform: uppercase;
-        letter-spacing: 0.04em;
+        letter-spacing: 0.05em;
     }
 
     .setup-row {
@@ -112,20 +122,27 @@
     input[type="number"] {
         flex: 1;
         min-width: 0;
+
         padding: 13px;
+
         border-radius: 10px;
         border: 1px solid var(--border);
+
         background: var(--card2);
         color: var(--text);
+
         font: inherit;
     }
 
     button {
         border: 0;
         border-radius: 10px;
+
         padding: 13px 16px;
+
         font: inherit;
         font-weight: 700;
+
         cursor: pointer;
     }
 
@@ -141,9 +158,10 @@
 
     .capture-btn {
         width: 100%;
+        margin-top: 12px;
+
         background: var(--success);
         color: white;
-        margin-top: 12px;
     }
 
     .download-btn {
@@ -160,15 +178,20 @@
         display: flex;
         align-items: center;
         gap: 8px;
+
         margin-bottom: 12px;
+
         font-weight: 700;
     }
 
     .dot {
         width: 12px;
         height: 12px;
+
         border-radius: 50%;
+
         background: var(--danger);
+
         flex: 0 0 auto;
     }
 
@@ -176,23 +199,30 @@
         background: var(--success);
     }
 
-#reader {
-    width: 100%;
-    min-height: 360px;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #000;
-}
+    #reader {
+        width: 100%;
+        min-height: 400px;
 
-#reader video {
-    width: 100% !important;
-    height: auto !important;
-    object-fit: cover;
-}
+        overflow: hidden;
+
+        border-radius: 12px;
+
+        background: #000;
+    }
+
+    #reader video {
+        width: 100% !important;
+        height: auto !important;
+
+        object-fit: contain !important;
+
+        border-radius: 12px;
+    }
 
     .message {
         min-height: 24px;
         margin-top: 12px;
+
         color: var(--muted);
         line-height: 1.4;
     }
@@ -211,21 +241,29 @@
 
     .preview-info {
         padding: 12px;
+
         border-radius: 10px;
+
         background: var(--card2);
         border: 1px solid var(--border);
+
         font-weight: 700;
     }
 
     textarea {
         width: 100%;
+
         margin-top: 10px;
         padding: 12px;
+
         border-radius: 10px;
         border: 1px solid var(--border);
+
         background: var(--card2);
         color: var(--text);
+
         font: 0.85rem/1.45 monospace;
+
         resize: vertical;
     }
 
@@ -234,26 +272,31 @@
     }
 
     #assembledOutput {
-        min-height: 260px;
+        min-height: 300px;
     }
 
     #debugOutput {
-        min-height: 90px;
+        min-height: 120px;
     }
 
     .progress-row {
         display: flex;
         justify-content: space-between;
         gap: 12px;
+
         font-weight: 700;
+
         margin-bottom: 10px;
     }
 
     .progress-track {
         width: 100%;
         height: 14px;
+
         border-radius: 999px;
+
         overflow: hidden;
+
         background: var(--missing);
         border: 1px solid var(--border);
     }
@@ -261,7 +304,9 @@
     #progressFill {
         width: 0%;
         height: 100%;
+
         background: var(--primary);
+
         transition: width 0.2s ease;
     }
 
@@ -271,22 +316,31 @@
 
     .chunk-grid {
         display: grid;
+
         grid-template-columns:
-            repeat(auto-fill, minmax(38px, 1fr));
+            repeat(auto-fill, minmax(40px, 1fr));
+
         gap: 6px;
+
         margin-top: 16px;
+
         max-height: 280px;
         overflow-y: auto;
     }
 
     .chunk {
         aspect-ratio: 1;
+
         display: grid;
         place-items: center;
+
         background: var(--missing);
+
         border: 1px solid var(--border);
         border-radius: 7px;
+
         color: var(--muted);
+
         font-size: 0.75rem;
         font-weight: 700;
     }
@@ -294,6 +348,7 @@
     .chunk.captured {
         background: var(--success);
         border-color: var(--success);
+
         color: white;
     }
 
@@ -305,9 +360,27 @@
 
     .small-note {
         margin-top: 10px;
+
         color: var(--muted);
+
         font-size: 0.85rem;
         line-height: 1.45;
+    }
+
+    .tech-status {
+        display: inline-block;
+
+        padding: 5px 9px;
+
+        border-radius: 999px;
+
+        background: var(--card2);
+        border: 1px solid var(--border);
+
+        color: var(--muted);
+
+        font-size: 0.8rem;
+        font-weight: 700;
     }
 
     @media (max-width: 600px) {
@@ -317,6 +390,10 @@
 
         .actions {
             grid-template-columns: 1fr;
+        }
+
+        #reader {
+            min-height: 460px;
         }
     }
 </style>
@@ -329,15 +406,15 @@
 <main class="app">
 
 ```
-<h1>QR Text Receiver</h1>
+<h1>Dense QR Text Receiver</h1>
 
 <p class="subtitle">
-    Enter the number of QR codes, scan each QR in order,
-    manually capture it, and download the reconstructed text.
+    Optimized for large, dense QR payloads. QR data is captured as raw
+    text and concatenated exactly in manual capture order.
 </p>
 
 
-<!-- TRANSFER SETUP -->
+<!-- SETUP -->
 
 <section class="card">
 
@@ -369,8 +446,8 @@
     </div>
 
     <div class="small-note">
-        Your QR codes contain raw text only. Their order is determined
-        by the order in which you manually capture them.
+        QR codes contain raw text only. Capture them in the same order
+        they are displayed.
     </div>
 
 </section>
@@ -393,6 +470,15 @@
 
     </div>
 
+    <span
+        id="techStatus"
+        class="tech-status"
+    >
+        Scanner: initializing...
+    </span>
+
+    <div style="height: 12px;"></div>
+
     <div id="reader"></div>
 
     <div
@@ -405,7 +491,7 @@
 </section>
 
 
-<!-- DETECTED QR -->
+<!-- CURRENT QR -->
 
 <section class="card">
 
@@ -436,8 +522,8 @@
     </button>
 
     <div class="small-note">
-        After capturing, advance to the next QR on the Mac.
-        The same visible QR cannot be captured twice.
+        After capture, change the QR displayed on the Mac. The receiver
+        waits for different QR text before enabling capture again.
     </div>
 
 </section>
@@ -499,7 +585,7 @@
 </section>
 
 
-<!-- FINAL OUTPUT -->
+<!-- OUTPUT -->
 
 <section class="card">
 
@@ -572,6 +658,9 @@
 
     const cameraStatus =
         document.getElementById("cameraStatus");
+
+    const techStatus =
+        document.getElementById("techStatus");
 
     const message =
         document.getElementById("message");
@@ -691,10 +780,12 @@
         pendingInfo.textContent =
             `Transfer ready. Scan QR 1 of ${totalChunks}.`;
 
+
         setMessage(
             `Ready to capture ${totalChunks} QR codes.`,
             "success"
         );
+
 
         setDebug(
             `Transfer started. Expecting ${totalChunks} QR codes.`
@@ -711,11 +802,6 @@
 
     function onQrDetected(decodedText) {
 
-        /*
-         * Do not allow capture until the expected count
-         * has been entered.
-         */
-
         if (totalChunks === null) {
 
             pendingInfo.textContent =
@@ -726,18 +812,10 @@
 
             captureBtn.disabled = true;
 
-            setDebug(
-                `QR detected (${decodedText.length} characters), but transfer has not started.`
-            );
-
             return;
 
         }
 
-
-        /*
-         * Transfer already complete.
-         */
 
         if (capturedCount >= totalChunks) {
 
@@ -749,10 +827,8 @@
 
 
         /*
-         * If the currently visible QR is the QR that was
-         * just captured, keep it locked.
-         *
-         * This prevents repeatedly capturing the same QR.
+         * Prevent immediately re-detecting and recapturing
+         * the QR that was just stored.
          */
 
         if (decodedText === lockedText) {
@@ -763,18 +839,14 @@
 
 
         /*
-         * A new QR appeared.
-         *
-         * If we were waiting for a new QR after capture,
-         * unlock scanning.
+         * A different QR is now visible.
          */
 
         lockedText = null;
 
 
         /*
-         * If this exact QR is already pending,
-         * ignore repeated scanner callbacks.
+         * Ignore repeated callbacks for the same pending QR.
          */
 
         if (decodedText === pendingText) {
@@ -784,7 +856,8 @@
         }
 
 
-        pendingText = decodedText;
+        pendingText =
+            decodedText;
 
 
         pendingInfo.textContent =
@@ -799,13 +872,13 @@
 
 
         setMessage(
-            `QR detected (${decodedText.length} characters). Press Capture This QR.`,
+            `QR detected: ${decodedText.length} characters. Press Capture This QR.`,
             "success"
         );
 
 
         setDebug(
-            `New QR detected. Length: ${decodedText.length} characters. Ready for capture #${capturedCount + 1}.`
+            `Decoded ${decodedText.length} characters. Ready for capture #${capturedCount + 1}.`
         );
 
     }
@@ -822,7 +895,7 @@
         if (pendingText === null) {
 
             setMessage(
-                "No new QR is currently ready to capture.",
+                "No new QR is ready to capture.",
                 "warning"
             );
 
@@ -832,11 +905,6 @@
 
 
         if (totalChunks === null) {
-
-            setMessage(
-                "Start the transfer first.",
-                "error"
-            );
 
             return;
 
@@ -851,33 +919,35 @@
 
 
         /*
-         * Store text exactly as decoded.
+         * Store exactly as decoded.
          *
-         * No trimming.
-         * No added spaces.
+         * No trim().
+         * No separators.
          * No added newlines.
          */
 
-        chunks.push(pendingText);
+        chunks.push(
+            pendingText
+        );
 
 
         capturedCount++;
 
 
-        /*
-         * Lock this QR until the camera sees different text.
-         */
-
-        lockedText = pendingText;
-
-        pendingText = null;
+        lockedText =
+            pendingText;
 
 
-        captureBtn.disabled = true;
+        pendingText =
+            null;
+
+
+        captureBtn.disabled =
+            true;
 
 
         pendingInfo.textContent =
-            `QR ${capturedCount} captured. Advance to the next QR.`;
+            `QR ${capturedCount} captured. Change the QR on the Mac.`;
 
 
         renderGrid();
@@ -895,23 +965,23 @@
         if (capturedCount === totalChunks) {
 
             setMessage(
-                "All QR codes captured. The assembled text is complete.",
+                "All QR codes captured. Assembled text is complete.",
                 "success"
             );
 
             setDebug(
-                `Transfer complete. ${capturedCount}/${totalChunks} QR codes captured.`
+                `Transfer complete: ${capturedCount}/${totalChunks}.`
             );
 
         } else {
 
             setMessage(
-                `Captured QR ${capturedCount}. Now advance to QR ${capturedCount + 1}.`,
+                `Captured ${capturedCount}/${totalChunks}. Show QR ${capturedCount + 1}.`,
                 "success"
             );
 
             setDebug(
-                `Captured chunk ${capturedCount}/${totalChunks}. Waiting for different QR text.`
+                `Captured QR ${capturedCount}. Waiting for next QR.`
             );
 
         }
@@ -921,13 +991,14 @@
 
     /*
      * =========================================================
-     * GRID
+     * PROGRESS GRID
      * =========================================================
      */
 
     function renderGrid() {
 
-        chunkGrid.innerHTML = "";
+        chunkGrid.innerHTML =
+            "";
 
 
         if (totalChunks === null) {
@@ -996,7 +1067,8 @@
             progressFill.style.width =
                 "0%";
 
-            downloadBtn.disabled = true;
+            downloadBtn.disabled =
+                true;
 
             return;
 
@@ -1039,14 +1111,6 @@
 
     function rebuildOutput() {
 
-        /*
-         * join("") adds absolutely nothing between chunks.
-         *
-         * No commas.
-         * No spaces.
-         * No newlines.
-         */
-
         assembledOutput.value =
             chunks.join("");
 
@@ -1067,7 +1131,7 @@
         ) {
 
             setMessage(
-                "Transfer is not complete yet.",
+                "Transfer is not complete.",
                 "error"
             );
 
@@ -1076,9 +1140,13 @@
         }
 
 
+        const output =
+            chunks.join("");
+
+
         const blob =
             new Blob(
-                [chunks.join("")],
+                [output],
                 {
                     type: "text/plain;charset=utf-8"
                 }
@@ -1086,14 +1154,20 @@
 
 
         const url =
-            URL.createObjectURL(blob);
+            URL.createObjectURL(
+                blob
+            );
 
 
         const link =
-            document.createElement("a");
+            document.createElement(
+                "a"
+            );
 
 
-        link.href = url;
+        link.href =
+            url;
+
 
         link.download =
             "extracted_data.txt";
@@ -1123,7 +1197,7 @@
 
 
         setDebug(
-            "Assembled text downloaded successfully."
+            `Downloaded ${output.length} characters.`
         );
 
     }
@@ -1137,47 +1211,57 @@
 
     function resetTransfer() {
 
-        const shouldReset =
-            window.confirm(
-                "Clear all captured text and start over?"
-            );
-
-
-        if (!shouldReset) {
+        if (
+            !window.confirm(
+                "Clear all captured QR data and start over?"
+            )
+        ) {
             return;
         }
 
 
-        chunks.length = 0;
+        chunks.length =
+            0;
 
 
-        totalChunks = null;
+        totalChunks =
+            null;
 
-        capturedCount = 0;
+        capturedCount =
+            0;
 
-        pendingText = null;
+        pendingText =
+            null;
 
-        lockedText = null;
-
-
-        expectedCount.value = "";
-
-        expectedCount.disabled = false;
-
-        startTransferBtn.disabled = false;
+        lockedText =
+            null;
 
 
-        captureBtn.disabled = true;
+        expectedCount.value =
+            "";
 
-        downloadBtn.disabled = true;
+        expectedCount.disabled =
+            false;
+
+        startTransferBtn.disabled =
+            false;
+
+
+        captureBtn.disabled =
+            true;
+
+        downloadBtn.disabled =
+            true;
 
 
         pendingInfo.textContent =
             "Waiting for a QR...";
 
-        pendingData.value = "";
+        pendingData.value =
+            "";
 
-        assembledOutput.value = "";
+        assembledOutput.value =
+            "";
 
 
         progressText.textContent =
@@ -1191,7 +1275,8 @@
         );
 
 
-        chunkGrid.innerHTML = "";
+        chunkGrid.innerHTML =
+            "";
 
 
         setMessage(
@@ -1200,7 +1285,7 @@
 
 
         setDebug(
-            "Transfer reset. Camera remains active."
+            "Transfer reset."
         );
 
     }
@@ -1213,148 +1298,252 @@
      */
 
     async function startCamera() {
-    if (typeof Html5Qrcode === "undefined") {
-        cameraStatus.textContent =
-            "Camera: scanner library failed to load";
 
-        setMessage(
-            "QR scanner library could not be loaded.",
-            "error"
-        );
+        if (
+            typeof Html5Qrcode === "undefined"
+        ) {
 
-        setDebug(
-            "ERROR: Html5Qrcode library is undefined."
-        );
-
-        return;
-    }
-
-    try {
-        cameraStatus.textContent =
-            "Camera: requesting access...";
-
-        setMessage(
-            "Requesting high-resolution camera access..."
-        );
-
-        setDebug(
-            "Looking for available cameras..."
-        );
-
-        const cameras =
-            await Html5Qrcode.getCameras();
-
-        if (!cameras || cameras.length === 0) {
             throw new Error(
-                "No cameras found by the browser."
+                "html5-qrcode failed to load."
             );
+
         }
 
-        const preferredCamera =
-            cameras.find(camera =>
-                /back|rear|environment/i.test(
-                    camera.label || ""
-                )
-            )
-            || cameras[cameras.length - 1];
 
-        setDebug(
-            `Found ${cameras.length} camera(s). Starting: ${
-                preferredCamera.label || preferredCamera.id
-            }`
-        );
+        try {
 
-        scanner = new Html5Qrcode(
-            "reader",
-            {
-                verbose: false
+            cameraStatus.textContent =
+                "Camera: requesting access...";
+
+
+            techStatus.textContent =
+                "Scanner: checking native BarcodeDetector...";
+
+
+            setMessage(
+                "Looking for available cameras..."
+            );
+
+
+            setDebug(
+                "Checking camera support and native BarcodeDetector support."
+            );
+
+
+            const nativeDetectorSupported =
+                typeof BarcodeDetector !==
+                "undefined";
+
+
+            if (nativeDetectorSupported) {
+
+                techStatus.textContent =
+                    "Scanner: native BarcodeDetector preferred";
+
+            } else {
+
+                techStatus.textContent =
+                    "Scanner: ZXing fallback";
+
             }
-        );
 
-        /*
-         * High-density QR optimized configuration.
-         */
-        const config = {
-            fps: 30,
 
-            /*
-             * Use nearly the entire camera frame.
-             * Dense QR codes need as many pixels as possible.
-             */
-            qrbox: (width, height) => {
-                const size = Math.floor(
-                    Math.min(width, height) * 0.96
+            const cameras =
+                await Html5Qrcode.getCameras();
+
+
+            if (
+                !cameras ||
+                cameras.length === 0
+            ) {
+
+                throw new Error(
+                    "No cameras found."
                 );
 
-                return {
-                    width: size,
-                    height: size
-                };
-            },
-
-            /*
-             * Important for very dense QR codes.
-             */
-            disableFlip: true,
-
-            /*
-             * Allow the scanner to use more of the camera
-             * image instead of aggressively cropping it.
-             */
-            aspectRatio: 1
-        };
-
-        await scanner.start(
-            preferredCamera.id,
-            config,
-            onQrDetected,
-            () => {
-                // Normal: no QR detected in this frame.
             }
-        );
 
-        cameraDot.classList.add("active");
 
-        cameraStatus.textContent =
-            "Camera: ACTIVE";
+            /*
+             * Prefer the rear-facing camera.
+             */
 
-        setMessage(
-            `Camera active: ${
-                preferredCamera.label || "camera"
-            }. Move closer until the QR fills most of the preview.`,
-            "success"
-        );
+            const preferredCamera =
+                cameras.find(
+                    camera =>
+                        /back|rear|environment/i.test(
+                            camera.label || ""
+                        )
+                )
+                ||
+                cameras[
+                    cameras.length - 1
+                ];
 
-        setDebug(
-            "High-density QR camera scanner started successfully."
-        );
 
-    } catch (error) {
-        console.error(
-            "Camera startup failed:",
-            error
-        );
+            setDebug(
+                `Found ${cameras.length} camera(s). Selected: ${
+                    preferredCamera.label || preferredCamera.id
+                }`
+            );
 
-        cameraDot.classList.remove("active");
 
-        cameraStatus.textContent =
-            "Camera: FAILED";
+            /*
+             * Important:
+             *
+             * This enables html5-qrcode's experimental native
+             * BarcodeDetector path where the browser supports it.
+             *
+             * If unsupported, the library falls back to its
+             * normal QR decoding implementation.
+             */
 
-        const errorMessage =
-            error && error.message
-                ? error.message
-                : String(error);
+            scanner =
+                new Html5Qrcode(
+                    "reader",
+                    {
+                        formatsToSupport: [
+                            Html5QrcodeSupportedFormats.QR_CODE
+                        ],
 
-        setMessage(
-            `Camera access failed: ${errorMessage}`,
-            "error"
-        );
+                        experimentalFeatures: {
+                            useBarCodeDetectorIfSupported: true
+                        },
 
-        setDebug(
-            `CAMERA ERROR: ${errorMessage}`
-        );
+                        verbose: false
+                    }
+                );
+
+
+            /*
+             * Dense QR configuration.
+             *
+             * The scanner needs enough image pixels, but fps is
+             * intentionally not pushed excessively high because
+             * quality/focus is more important than processing the
+             * same blurry frame repeatedly.
+             */
+
+            const config = {
+
+                fps: 15,
+
+                qrbox: (
+                    width,
+                    height
+                ) => {
+
+                    const size =
+                        Math.floor(
+                            Math.min(
+                                width,
+                                height
+                            ) * 0.92
+                        );
+
+
+                    return {
+                        width: size,
+                        height: size
+                    };
+
+                },
+
+
+                disableFlip: true
+
+
+            };
+
+
+            await scanner.start(
+
+                preferredCamera.id,
+
+                config,
+
+                onQrDetected,
+
+                () => {
+                    /*
+                     * No QR in this frame.
+                     * Normal scanner behavior.
+                     */
+                }
+
+            );
+
+
+            cameraDot.classList.add(
+                "active"
+            );
+
+
+            cameraStatus.textContent =
+                "Camera: ACTIVE";
+
+
+            const activeTech =
+                nativeDetectorSupported
+                    ? "native BarcodeDetector preferred"
+                    : "ZXing decoder";
+
+
+            techStatus.textContent =
+                `Scanner: ${activeTech}`;
+
+
+            setMessage(
+                "Camera active. For dense QRs, move closer until the QR occupies most of the preview.",
+                "success"
+            );
+
+
+            setDebug(
+                `Camera started successfully. Decoder preference: ${activeTech}.`
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Camera startup failed:",
+                error
+            );
+
+
+            cameraDot.classList.remove(
+                "active"
+            );
+
+
+            cameraStatus.textContent =
+                "Camera: FAILED";
+
+
+            techStatus.textContent =
+                "Scanner: unavailable";
+
+
+            const errorMessage =
+                error && error.message
+                    ? error.message
+                    : String(error);
+
+
+            setMessage(
+                `Camera access failed: ${errorMessage}`,
+                "error"
+            );
+
+
+            setDebug(
+                `CAMERA ERROR: ${errorMessage}`
+            );
+
+        }
+
     }
-}
 
 
     /*
@@ -1388,7 +1577,7 @@
 
 
     /*
-     * Start camera when page loads.
+     * Start camera immediately.
      */
 
     startCamera();
