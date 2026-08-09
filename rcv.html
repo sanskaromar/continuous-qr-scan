@@ -3,15 +3,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
-    >
 
 ```
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+>
+
 <title>QR Text Receiver</title>
 
-<!-- QR scanner library -->
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
@@ -65,19 +65,20 @@
     }
 
     .app {
-        width: min(100%, 850px);
-        margin: auto;
+        width: min(100%, 900px);
+        margin: 0 auto;
         padding: 16px;
     }
 
     h1 {
-        margin: 0 0 6px;
-        font-size: 1.8rem;
+        margin: 0 0 8px;
+        font-size: clamp(1.6rem, 5vw, 2.2rem);
     }
 
     .subtitle {
-        color: var(--muted);
         margin: 0 0 20px;
+        color: var(--muted);
+        line-height: 1.5;
     }
 
     .card {
@@ -88,20 +89,82 @@
         margin-bottom: 16px;
     }
 
+    .label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .setup-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    input[type="number"] {
+        flex: 1;
+        min-width: 0;
+        padding: 13px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--card2);
+        color: var(--text);
+        font: inherit;
+    }
+
+    button {
+        border: 0;
+        border-radius: 10px;
+        padding: 13px 16px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .primary-btn {
+        background: var(--primary);
+        color: white;
+    }
+
+    .capture-btn {
+        width: 100%;
+        background: var(--success);
+        color: white;
+        margin-top: 12px;
+    }
+
+    .download-btn {
+        background: var(--primary);
+        color: white;
+    }
+
+    .reset-btn {
+        background: var(--danger);
+        color: white;
+    }
+
     .camera-status {
         display: flex;
         align-items: center;
         gap: 8px;
         margin-bottom: 12px;
-        font-size: 0.9rem;
         font-weight: 700;
     }
 
     .dot {
-        width: 11px;
-        height: 11px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         background: var(--danger);
+        flex: 0 0 auto;
     }
 
     .dot.active {
@@ -113,75 +176,79 @@
         overflow: hidden;
         border-radius: 12px;
         background: #000;
+        min-height: 100px;
     }
 
     #reader video {
+        width: 100% !important;
         border-radius: 12px;
     }
 
-    .status-message {
+    .message {
         min-height: 24px;
         margin-top: 12px;
         color: var(--muted);
+        line-height: 1.4;
     }
 
-    .status-message.success {
+    .message.success {
         color: var(--success);
     }
 
-    .status-message.error {
+    .message.error {
         color: var(--danger);
     }
 
-    .status-message.warning {
+    .message.warning {
         color: var(--warning);
     }
 
-    .preview-box {
+    .preview-info {
+        padding: 12px;
+        border-radius: 10px;
         background: var(--card2);
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px;
-        min-height: 120px;
-    }
-
-    .preview-label {
-        display: block;
-        color: var(--muted);
-        font-size: 0.8rem;
-        margin-bottom: 8px;
-    }
-
-    #pendingInfo {
         font-weight: 700;
-        margin-bottom: 8px;
+    }
+
+    textarea {
+        width: 100%;
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        background: var(--card2);
+        color: var(--text);
+        font: 0.85rem/1.45 monospace;
+        resize: vertical;
     }
 
     #pendingData {
-        width: 100%;
+        min-height: 130px;
+    }
+
+    #assembledOutput {
+        min-height: 260px;
+    }
+
+    #debugOutput {
         min-height: 90px;
-        resize: vertical;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 10px;
-        background: var(--bg);
-        color: var(--text);
-        font: 0.85rem/1.4 monospace;
     }
 
     .progress-row {
         display: flex;
         justify-content: space-between;
         gap: 12px;
-        margin-bottom: 10px;
         font-weight: 700;
+        margin-bottom: 10px;
     }
 
     .progress-track {
+        width: 100%;
         height: 14px;
         border-radius: 999px;
-        background: var(--missing);
         overflow: hidden;
+        background: var(--missing);
         border: 1px solid var(--border);
     }
 
@@ -198,7 +265,8 @@
 
     .chunk-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+        grid-template-columns:
+            repeat(auto-fill, minmax(38px, 1fr));
         gap: 6px;
         margin-top: 16px;
         max-height: 280px;
@@ -225,52 +293,22 @@
 
     .actions {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
     }
 
-    button {
-        border: none;
-        border-radius: 10px;
-        padding: 13px;
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    button:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-
-    .capture {
-        background: var(--success);
-        color: white;
-    }
-
-    .download {
-        background: var(--primary);
-        color: white;
-    }
-
-    .reset {
-        background: var(--danger);
-        color: white;
-    }
-
-    .assembled {
-        width: 100%;
-        min-height: 250px;
-        resize: vertical;
-        background: var(--card2);
-        color: var(--text);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 12px;
-        font: 0.9rem/1.45 monospace;
+    .small-note {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 0.85rem;
+        line-height: 1.45;
     }
 
     @media (max-width: 600px) {
+        .setup-row {
+            flex-direction: column;
+        }
+
         .actions {
             grid-template-columns: 1fr;
         }
@@ -281,196 +319,256 @@
 </head>
 
 <body>
-    <main class="app">
+
+<main class="app">
 
 ```
-    <h1>QR Text Receiver</h1>
+<h1>QR Text Receiver</h1>
 
-    <p class="subtitle">
-        Scan a QR, verify the preview, press Capture, then advance to the
-        next QR on the source computer.
-    </p>
+<p class="subtitle">
+    Enter the number of QR codes, scan each QR in order,
+    manually capture it, and download the reconstructed text.
+</p>
 
-        <section class="card">
-    <label for="expectedCount">
-        How many QR codes will you scan?
+
+<!-- TRANSFER SETUP -->
+
+<section class="card">
+
+    <label
+        class="label"
+        for="expectedCount"
+    >
+        Number of QR Codes Expected
     </label>
 
-    <div style="display:flex; gap:10px; margin-top:10px;">
+    <div class="setup-row">
+
         <input
             id="expectedCount"
             type="number"
             min="1"
             inputmode="numeric"
             placeholder="Example: 50"
-            style="
-                flex:1;
-                padding:12px;
-                border-radius:8px;
-                border:1px solid var(--border);
-                background:var(--card2);
-                color:var(--text);
-                font:inherit;
-            "
         >
 
         <button
-            id="setCountBtn"
+            id="startTransferBtn"
+            class="primary-btn"
             type="button"
-            style="
-                background:var(--primary);
-                color:white;
-            "
         >
             Start Transfer
         </button>
+
     </div>
+
+    <div class="small-note">
+        Your QR codes contain raw text only. Their order is determined
+        by the order in which you manually capture them.
+    </div>
+
 </section>
 
-    <section class="card">
 
-        <div class="camera-status">
-            <span id="cameraDot" class="dot"></span>
-            <span id="cameraStatus">Camera: starting...</span>
-        </div>
+<!-- CAMERA -->
 
-        <div id="reader"></div>
+<section class="card">
 
-        <div id="message" class="status-message">
-            Requesting camera access...
-        </div>
+    <div class="camera-status">
 
-    </section>
+        <span
+            id="cameraDot"
+            class="dot"
+        ></span>
+
+        <span id="cameraStatus">
+            Camera: starting...
+        </span>
+
+    </div>
+
+    <div id="reader"></div>
+
+    <div
+        id="message"
+        class="message"
+    >
+        Requesting camera access...
+    </div>
+
+</section>
 
 
-    <section class="card">
+<!-- DETECTED QR -->
 
-        <span class="preview-label">CURRENT QR DETECTED</span>
+<section class="card">
 
-        <div class="preview-box">
+    <span class="label">
+        Current QR Detected
+    </span>
 
-            <div id="pendingInfo">
-                No QR detected yet.
-            </div>
+    <div
+        id="pendingInfo"
+        class="preview-info"
+    >
+        Waiting for a QR...
+    </div>
 
-            <textarea
-                id="pendingData"
-                readonly
-                placeholder="Detected QR data will appear here..."
-            ></textarea>
+    <textarea
+        id="pendingData"
+        readonly
+        placeholder="Decoded QR text will appear here..."
+    ></textarea>
 
-        </div>
+    <button
+        id="captureBtn"
+        class="capture-btn"
+        type="button"
+        disabled
+    >
+        Capture This QR
+    </button>
 
-        <div style="height: 12px;"></div>
+    <div class="small-note">
+        After capturing, advance to the next QR on the Mac.
+        The same visible QR cannot be captured twice.
+    </div>
+
+</section>
+
+
+<!-- PROGRESS -->
+
+<section class="card">
+
+    <div class="progress-row">
+
+        <span>
+            Progress
+        </span>
+
+        <span id="progressText">
+            Captured: 0 / ?
+        </span>
+
+    </div>
+
+    <div class="progress-track">
+        <div id="progressFill"></div>
+    </div>
+
+    <div
+        id="chunkGrid"
+        class="chunk-grid"
+    ></div>
+
+</section>
+
+
+<!-- ACTIONS -->
+
+<section class="card">
+
+    <div class="actions">
 
         <button
-            id="captureBtn"
-            class="capture"
+            id="downloadBtn"
+            class="download-btn"
             type="button"
             disabled
         >
-            Capture This QR
+            Download Assembled Text
         </button>
 
-    </section>
+        <button
+            id="resetBtn"
+            class="reset-btn"
+            type="button"
+        >
+            Clear / Reset
+        </button>
+
+    </div>
+
+</section>
 
 
-    <section class="card">
+<!-- FINAL OUTPUT -->
 
-        <div class="progress-row">
-            <span>Progress</span>
-            <span id="progressText">Captured: 0 / ?</span>
-        </div>
+<section class="card">
 
-        <div class="progress-track">
-            <div id="progressFill"></div>
-        </div>
+    <span class="label">
+        Assembled Text
+    </span>
 
-        <div id="chunkGrid" class="chunk-grid"></div>
+    <textarea
+        id="assembledOutput"
+        readonly
+        placeholder="Captured text will be assembled here..."
+    ></textarea>
 
-    </section>
-
-
-    <section class="card">
-
-        <div class="actions">
-
-            <button
-                id="downloadBtn"
-                class="download"
-                type="button"
-                disabled
-            >
-                Download Assembled Text
-            </button>
-
-            <button
-                id="resetBtn"
-                class="reset"
-                type="button"
-            >
-                Clear / Reset
-            </button>
-
-        </div>
-
-    </section>
+</section>
 
 
-    <section class="card">
+<!-- DEBUG -->
 
-        <span class="preview-label">
-            ASSEMBLED TEXT PREVIEW
-        </span>
+<section class="card">
 
-        <textarea
-            id="assembledOutput"
-            class="assembled"
-            readonly
-            placeholder="Captured text will appear here in chunk order..."
-        ></textarea>
+    <span class="label">
+        Debug Information
+    </span>
 
-    </section>
+    <textarea
+        id="debugOutput"
+        readonly
+    >Initializing...</textarea>
+
+</section>
+```
 
 </main>
-
 
 <script>
 
     /*
-     * Expected QR format:
-     *
-     * 1/50|Hello this is the first piece
-     * 2/50| of text
-     * 3/50| and so on...
+     * =========================================================
+     * STATE
+     * =========================================================
      */
-
-    const chunks = new Map();
-
-    let totalChunks = null;
-let capturedCount = 0;
-let pendingText = null;
-
-const expectedCount =
-    document.getElementById("expectedCount");
-
-const setCountBtn =
-    document.getElementById("setCountBtn");
-
-    let totalChunks = null;
-
-    let pendingChunk = null;
 
     let scanner = null;
 
-    const message =
-        document.getElementById("message");
+    let totalChunks = null;
+
+    let capturedCount = 0;
+
+    let pendingText = null;
+
+    let lockedText = null;
+
+    const chunks = [];
+
+
+    /*
+     * =========================================================
+     * DOM
+     * =========================================================
+     */
+
+    const expectedCount =
+        document.getElementById("expectedCount");
+
+    const startTransferBtn =
+        document.getElementById("startTransferBtn");
 
     const cameraDot =
         document.getElementById("cameraDot");
 
     const cameraStatus =
         document.getElementById("cameraStatus");
+
+    const message =
+        document.getElementById("message");
 
     const pendingInfo =
         document.getElementById("pendingInfo");
@@ -499,530 +597,56 @@ const setCountBtn =
     const resetBtn =
         document.getElementById("resetBtn");
 
+    const debugOutput =
+        document.getElementById("debugOutput");
+
+
+    /*
+     * =========================================================
+     * HELPERS
+     * =========================================================
+     */
 
     function setMessage(text, type = "") {
 
         message.textContent = text;
 
         message.className =
-            `status-message ${type}`;
+            `message ${type}`.trim();
 
     }
 
 
-    function parsePayload(text) {
+    function setDebug(text) {
 
-        const separator =
-            text.indexOf("|");
+        const timestamp =
+            new Date().toLocaleTimeString();
 
-        if (separator === -1) {
-            return null;
-        }
+        debugOutput.value =
+            `[${timestamp}] ${text}`;
 
-        const metadata =
-            text.slice(0, separator);
-
-        const data =
-            text.slice(separator + 1);
-
-        const match =
-            metadata.match(/^(\d+)\/(\d+)$/);
-
-        if (!match) {
-            return null;
-        }
-
-        const index =
-            Number.parseInt(match[1], 10);
-
-        const total =
-            Number.parseInt(match[2], 10);
-
-        if (
-            !Number.isInteger(index) ||
-            !Number.isInteger(total) ||
-            index < 1 ||
-            total < 1 ||
-            index > total
-        ) {
-            return null;
-        }
-
-        return {
-            index,
-            total,
-            data
-        };
-
-    }
-
-
-    function onQrDetected(decodedText) {
-
-    /*
-     * Do not allow scanning until the user has
-     * specified the expected number of QR codes.
-     */
-
-    if (!totalChunks) {
-        pendingChunk = null;
-        captureBtn.disabled = true;
-
-        pendingInfo.textContent =
-            "First enter the expected number of QR codes.";
-
-        pendingData.value = decodedText;
-
-        return;
     }
 
 
     /*
-     * If there is already a QR waiting to be captured,
-     * ignore repeated detections of the same visible QR.
+     * =========================================================
+     * START TRANSFER
+     * =========================================================
      */
 
-    if (pendingText === decodedText) {
-        return;
-    }
+    function startTransfer() {
 
+        if (capturedCount > 0) {
 
-    /*
-     * If the previous QR has not yet been manually captured,
-     * keep that QR as the pending one.
-     */
-
-    if (pendingText !== null) {
-        return;
-    }
-
-
-    pendingText = decodedText;
-
-    pendingInfo.textContent =
-        `Ready to capture QR ${capturedCount + 1} of ${totalChunks}`;
-
-    pendingData.value =
-        decodedText;
-
-    captureBtn.disabled = false;
-
-    setMessage(
-        "QR detected. Press Capture This QR, then advance the QR on the Mac.",
-        "success"
-    );
-
-}
-
-
-    function renderGrid() {
-
-        chunkGrid.innerHTML = "";
-
-        if (!totalChunks) {
-            return;
-        }
-
-        const fragment =
-            document.createDocumentFragment();
-
-        for (
-            let index = 1;
-            index <= totalChunks;
-            index++
-        ) {
-
-            const cell =
-                document.createElement("div");
-
-            cell.className = "chunk";
-
-            cell.textContent = index;
-
-            if (chunks.has(index)) {
-                cell.classList.add("captured");
-            }
-
-            fragment.appendChild(cell);
-
-        }
-
-        chunkGrid.appendChild(fragment);
-
-    }
-
-
-function allChunksPresent() {
-
-    return (
-        totalChunks !== null &&
-        capturedCount === totalChunks
-    );
-
-}
-
-
-    function updateProgress() {
-
-    if (!totalChunks) {
-
-        progressText.textContent =
-            "Captured: 0 / ?";
-
-        progressFill.style.width =
-            "0%";
-
-        downloadBtn.disabled = true;
-
-        return;
-    }
-
-
-    const percentage =
-        (capturedCount / totalChunks) * 100;
-
-
-    progressText.textContent =
-        `Captured: ${capturedCount} / ${totalChunks}`;
-
-
-    progressFill.style.width =
-        `${percentage}%`;
-
-
-    const complete =
-        capturedCount === totalChunks;
-
-
-    progressFill.classList.toggle(
-        "complete",
-        complete
-    );
-
-
-    downloadBtn.disabled =
-        !complete;
-
-}
-
-
-    function rebuildOutput() {
-
-    let output = "";
-
-    for (
-        let index = 1;
-        index <= capturedCount;
-        index++
-    ) {
-
-        output += chunks.get(index);
-
-    }
-
-    assembledOutput.value = output;
-
-}
-
-
-    function capturePendingChunk() {
-
-    if (pendingText === null) {
-        return;
-    }
-
-    if (!totalChunks) {
-        setMessage(
-            "Set the expected number of QR codes first.",
-            "error"
-        );
-
-        return;
-    }
-
-    if (capturedCount >= totalChunks) {
-        return;
-    }
-
-
-    /*
-     * Store strictly in capture order.
-     *
-     * First captured QR becomes chunk 1,
-     * second becomes chunk 2, etc.
-     */
-
-    capturedCount++;
-
-    chunks.set(
-        capturedCount,
-        pendingText
-    );
-
-
-    pendingInfo.textContent =
-        `QR ${capturedCount} captured successfully.`;
-
-    pendingData.value =
-        pendingText;
-
-    pendingText = null;
-
-    captureBtn.disabled = true;
-
-
-    renderGrid();
-
-    updateProgress();
-
-    rebuildOutput();
-
-
-    if (navigator.vibrate) {
-        navigator.vibrate(50);
-    }
-
-
-    if (capturedCount === totalChunks) {
-
-        setMessage(
-            "All QR codes captured. Text is complete.",
-            "success"
-        );
-
-    } else {
-
-        setMessage(
-            `QR ${capturedCount} captured. Advance to QR ${capturedCount + 1}.`,
-            "success"
-        );
-
-    }
-
-}
-
-
-    function downloadText() {
-
-        if (!allChunksPresent()) {
-            return;
-        }
-
-
-        const finalText =
-            assembledOutput.value;
-
-
-        const blob =
-            new Blob(
-                [finalText],
-                {
-                    type: "text/plain;charset=utf-8"
-                }
+            setMessage(
+                "Clear the current transfer before starting another one.",
+                "warning"
             );
 
-
-        const url =
-            URL.createObjectURL(blob);
-
-
-        const link =
-            document.createElement("a");
-
-        link.href = url;
-
-        link.download =
-            "extracted_data.txt";
-
-
-        document.body.appendChild(link);
-
-        link.click();
-
-        link.remove();
-
-
-        setTimeout(
-            () => URL.revokeObjectURL(url),
-            1000
-        );
-
-    }
-
-
-    function resetTransfer() {
-
-        if (
-            !window.confirm(
-                "Clear all captured chunks?"
-            )
-        ) {
             return;
+
         }
 
-
-        chunks.clear();
-
-        totalChunks = null;
-
-        pendingChunk = null;
-
-
-        pendingInfo.textContent =
-            "No QR detected yet.";
-
-        pendingData.value = "";
-
-        assembledOutput.value = "";
-
-
-        captureBtn.disabled = true;
-
-        downloadBtn.disabled = true;
-
-
-        progressText.textContent =
-            "Captured: 0 / ?";
-
-        progressFill.style.width =
-            "0%";
-
-        progressFill.classList.remove(
-            "complete"
-        );
-
-
-        chunkGrid.innerHTML = "";
-
-
-        setMessage(
-            "Transfer cleared. Camera remains active."
-        );
-
-    }
-
-
-    async function startCamera() {
-    if (typeof Html5Qrcode === "undefined") {
-        cameraStatus.textContent =
-            "Camera: scanner library failed to load";
-
-        setMessage(
-            "QR scanner library could not be loaded.",
-            "error"
-        );
-
-        return;
-    }
-
-    const config = {
-        fps: 10,
-
-        qrbox: (width, height) => {
-            const size = Math.floor(
-                Math.min(width, height) * 0.8
-            );
-
-            return {
-                width: size,
-                height: size
-            };
-        }
-    };
-
-    cameraDot.classList.remove("active");
-
-    cameraStatus.textContent =
-        "Camera: looking for cameras...";
-
-    setMessage(
-        "Requesting camera access..."
-    );
-
-    try {
-        /*
-         * Ask the browser for permission and enumerate cameras.
-         *
-         * On many phones, camera labels may initially be empty until
-         * permission has been granted.
-         */
-        const cameras = await Html5Qrcode.getCameras();
-
-        if (!cameras || cameras.length === 0) {
-            throw new Error("No cameras found.");
-        }
-
-        /*
-         * Try to select a rear/back camera.
-         * Fall back to the first available camera.
-         */
-        const preferredCamera =
-            cameras.find(camera =>
-                /back|rear|environment/i.test(camera.label || "")
-            ) || cameras[cameras.length - 1];
-
-        /*
-         * Create ONE fresh scanner instance.
-         */
-        scanner = new Html5Qrcode("reader");
-
-        await scanner.start(
-            preferredCamera.id,
-            config,
-            onQrDetected,
-            () => {
-                /*
-                 * No QR found in this frame.
-                 * This is normal, so do nothing.
-                 */
-            }
-        );
-
-        cameraDot.classList.add("active");
-
-        cameraStatus.textContent =
-            "Camera: ACTIVE";
-
-        setMessage(
-            `Camera active: ${preferredCamera.label || "camera"}`,
-            "success"
-        );
-
-    } catch (error) {
-        console.error("Camera startup failed:", error);
-
-        cameraDot.classList.remove("active");
-
-        cameraStatus.textContent =
-            "Camera: FAILED";
-
-        setMessage(
-            `Camera access failed: ${error.message}`,
-            "error"
-        );
-    }
-}
-
-
-    captureBtn.addEventListener(
-        "click",
-        capturePendingChunk
-    );
-
-
-    downloadBtn.addEventListener(
-        "click",
-        downloadText
-    );
-
-
-    resetBtn.addEventListener(
-        "click",
-        resetTransfer
-    );
-    setCountBtn.addEventListener(
-    "click",
-    () => {
 
         const count =
             Number.parseInt(
@@ -1046,12 +670,153 @@ function allChunksPresent() {
         }
 
 
-        if (
-            capturedCount > 0
-        ) {
+        totalChunks = count;
+
+        expectedCount.disabled = true;
+
+        startTransferBtn.disabled = true;
+
+
+        renderGrid();
+
+        updateProgress();
+
+
+        pendingInfo.textContent =
+            `Transfer ready. Scan QR 1 of ${totalChunks}.`;
+
+        setMessage(
+            `Ready to capture ${totalChunks} QR codes.`,
+            "success"
+        );
+
+        setDebug(
+            `Transfer started. Expecting ${totalChunks} QR codes.`
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * QR DETECTED
+     * =========================================================
+     */
+
+    function onQrDetected(decodedText) {
+
+        /*
+         * Do not allow capture until the expected count
+         * has been entered.
+         */
+
+        if (totalChunks === null) {
+
+            pendingInfo.textContent =
+                "Enter the expected QR count, then press Start Transfer.";
+
+            pendingData.value =
+                decodedText;
+
+            captureBtn.disabled = true;
+
+            setDebug(
+                `QR detected (${decodedText.length} characters), but transfer has not started.`
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * Transfer already complete.
+         */
+
+        if (capturedCount >= totalChunks) {
+
+            captureBtn.disabled = true;
+
+            return;
+
+        }
+
+
+        /*
+         * If the currently visible QR is the QR that was
+         * just captured, keep it locked.
+         *
+         * This prevents repeatedly capturing the same QR.
+         */
+
+        if (decodedText === lockedText) {
+
+            return;
+
+        }
+
+
+        /*
+         * A new QR appeared.
+         *
+         * If we were waiting for a new QR after capture,
+         * unlock scanning.
+         */
+
+        lockedText = null;
+
+
+        /*
+         * If this exact QR is already pending,
+         * ignore repeated scanner callbacks.
+         */
+
+        if (decodedText === pendingText) {
+
+            return;
+
+        }
+
+
+        pendingText = decodedText;
+
+
+        pendingInfo.textContent =
+            `Ready to capture QR ${capturedCount + 1} of ${totalChunks}.`;
+
+
+        pendingData.value =
+            decodedText;
+
+
+        captureBtn.disabled = false;
+
+
+        setMessage(
+            `QR detected (${decodedText.length} characters). Press Capture This QR.`,
+            "success"
+        );
+
+
+        setDebug(
+            `New QR detected. Length: ${decodedText.length} characters. Ready for capture #${capturedCount + 1}.`
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * MANUAL CAPTURE
+     * =========================================================
+     */
+
+    function capturePendingChunk() {
+
+        if (pendingText === null) {
 
             setMessage(
-                "Clear the current transfer before starting a new one.",
+                "No new QR is currently ready to capture.",
                 "warning"
             );
 
@@ -1060,31 +825,621 @@ function allChunksPresent() {
         }
 
 
-        totalChunks = count;
+        if (totalChunks === null) {
 
-        expectedCount.disabled = true;
+            setMessage(
+                "Start the transfer first.",
+                "error"
+            );
 
-        setCountBtn.disabled = true;
+            return;
+
+        }
+
+
+        if (capturedCount >= totalChunks) {
+
+            return;
+
+        }
+
+
+        /*
+         * Store text exactly as decoded.
+         *
+         * No trimming.
+         * No added spaces.
+         * No added newlines.
+         */
+
+        chunks.push(pendingText);
+
+
+        capturedCount++;
+
+
+        /*
+         * Lock this QR until the camera sees different text.
+         */
+
+        lockedText = pendingText;
+
+        pendingText = null;
+
+
+        captureBtn.disabled = true;
+
+
+        pendingInfo.textContent =
+            `QR ${capturedCount} captured. Advance to the next QR.`;
 
 
         renderGrid();
 
         updateProgress();
 
+        rebuildOutput();
 
-        setMessage(
-            `Ready to capture ${totalChunks} QR codes.`,
-            "success"
+
+        if (navigator.vibrate) {
+            navigator.vibrate(50);
+        }
+
+
+        if (capturedCount === totalChunks) {
+
+            setMessage(
+                "All QR codes captured. The assembled text is complete.",
+                "success"
+            );
+
+            setDebug(
+                `Transfer complete. ${capturedCount}/${totalChunks} QR codes captured.`
+            );
+
+        } else {
+
+            setMessage(
+                `Captured QR ${capturedCount}. Now advance to QR ${capturedCount + 1}.`,
+                "success"
+            );
+
+            setDebug(
+                `Captured chunk ${capturedCount}/${totalChunks}. Waiting for different QR text.`
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================================
+     * GRID
+     * =========================================================
+     */
+
+    function renderGrid() {
+
+        chunkGrid.innerHTML = "";
+
+
+        if (totalChunks === null) {
+            return;
+        }
+
+
+        const fragment =
+            document.createDocumentFragment();
+
+
+        for (
+            let index = 1;
+            index <= totalChunks;
+            index++
+        ) {
+
+            const cell =
+                document.createElement("div");
+
+
+            cell.className =
+                "chunk";
+
+
+            if (index <= capturedCount) {
+
+                cell.classList.add(
+                    "captured"
+                );
+
+            }
+
+
+            cell.textContent =
+                index;
+
+
+            fragment.appendChild(
+                cell
+            );
+
+        }
+
+
+        chunkGrid.appendChild(
+            fragment
         );
 
     }
-);
 
+
+    /*
+     * =========================================================
+     * PROGRESS
+     * =========================================================
+     */
+
+    function updateProgress() {
+
+        if (totalChunks === null) {
+
+            progressText.textContent =
+                "Captured: 0 / ?";
+
+            progressFill.style.width =
+                "0%";
+
+            downloadBtn.disabled = true;
+
+            return;
+
+        }
+
+
+        const percentage =
+            (capturedCount / totalChunks) * 100;
+
+
+        progressText.textContent =
+            `Captured: ${capturedCount} / ${totalChunks}`;
+
+
+        progressFill.style.width =
+            `${percentage}%`;
+
+
+        const complete =
+            capturedCount === totalChunks;
+
+
+        progressFill.classList.toggle(
+            "complete",
+            complete
+        );
+
+
+        downloadBtn.disabled =
+            !complete;
+
+    }
+
+
+    /*
+     * =========================================================
+     * ASSEMBLE TEXT
+     * =========================================================
+     */
+
+    function rebuildOutput() {
+
+        /*
+         * join("") adds absolutely nothing between chunks.
+         *
+         * No commas.
+         * No spaces.
+         * No newlines.
+         */
+
+        assembledOutput.value =
+            chunks.join("");
+
+    }
+
+
+    /*
+     * =========================================================
+     * DOWNLOAD
+     * =========================================================
+     */
+
+    function downloadText() {
+
+        if (
+            totalChunks === null ||
+            capturedCount !== totalChunks
+        ) {
+
+            setMessage(
+                "Transfer is not complete yet.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        const blob =
+            new Blob(
+                [chunks.join("")],
+                {
+                    type: "text/plain;charset=utf-8"
+                }
+            );
+
+
+        const url =
+            URL.createObjectURL(blob);
+
+
+        const link =
+            document.createElement("a");
+
+
+        link.href = url;
+
+        link.download =
+            "extracted_data.txt";
+
+
+        document.body.appendChild(
+            link
+        );
+
+
+        link.click();
+
+
+        link.remove();
+
+
+        setTimeout(
+            () => URL.revokeObjectURL(url),
+            1000
+        );
+
+
+        setMessage(
+            "Download started: extracted_data.txt",
+            "success"
+        );
+
+
+        setDebug(
+            "Assembled text downloaded successfully."
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * RESET
+     * =========================================================
+     */
+
+    function resetTransfer() {
+
+        const shouldReset =
+            window.confirm(
+                "Clear all captured text and start over?"
+            );
+
+
+        if (!shouldReset) {
+            return;
+        }
+
+
+        chunks.length = 0;
+
+
+        totalChunks = null;
+
+        capturedCount = 0;
+
+        pendingText = null;
+
+        lockedText = null;
+
+
+        expectedCount.value = "";
+
+        expectedCount.disabled = false;
+
+        startTransferBtn.disabled = false;
+
+
+        captureBtn.disabled = true;
+
+        downloadBtn.disabled = true;
+
+
+        pendingInfo.textContent =
+            "Waiting for a QR...";
+
+        pendingData.value = "";
+
+        assembledOutput.value = "";
+
+
+        progressText.textContent =
+            "Captured: 0 / ?";
+
+        progressFill.style.width =
+            "0%";
+
+        progressFill.classList.remove(
+            "complete"
+        );
+
+
+        chunkGrid.innerHTML = "";
+
+
+        setMessage(
+            "Transfer cleared. Camera remains active."
+        );
+
+
+        setDebug(
+            "Transfer reset. Camera remains active."
+        );
+
+    }
+
+
+    /*
+     * =========================================================
+     * CAMERA
+     * =========================================================
+     */
+
+    async function startCamera() {
+
+        if (
+            typeof Html5Qrcode === "undefined"
+        ) {
+
+            cameraStatus.textContent =
+                "Camera: scanner library failed to load";
+
+            setMessage(
+                "The QR scanner library could not be loaded. Check internet access.",
+                "error"
+            );
+
+            setDebug(
+                "ERROR: Html5Qrcode library is undefined."
+            );
+
+            return;
+
+        }
+
+
+        const config = {
+
+            fps: 10,
+
+            qrbox: (
+                width,
+                height
+            ) => {
+
+                const size =
+                    Math.floor(
+                        Math.min(
+                            width,
+                            height
+                        ) * 0.82
+                    );
+
+
+                return {
+                    width: size,
+                    height: size
+                };
+
+            }
+
+        };
+
+
+        try {
+
+            cameraStatus.textContent =
+                "Camera: requesting access...";
+
+
+            setMessage(
+                "Looking for available cameras..."
+            );
+
+
+            setDebug(
+                "Calling Html5Qrcode.getCameras()..."
+            );
+
+
+            const cameras =
+                await Html5Qrcode.getCameras();
+
+
+            if (
+                !cameras ||
+                cameras.length === 0
+            ) {
+
+                throw new Error(
+                    "No cameras found by the browser."
+                );
+
+            }
+
+
+            /*
+             * Prefer rear/back camera if the browser exposes
+             * useful camera labels.
+             *
+             * Otherwise use the last camera, which is often the
+             * rear camera on phones.
+             */
+
+            const preferredCamera =
+                cameras.find(
+                    camera =>
+                        /back|rear|environment/i.test(
+                            camera.label || ""
+                        )
+                )
+                ||
+                cameras[cameras.length - 1];
+
+
+            setDebug(
+                `Found ${cameras.length} camera(s). Starting: ${
+                    preferredCamera.label || preferredCamera.id
+                }`
+            );
+
+
+            /*
+             * Create one fresh scanner instance.
+             */
+
+            scanner =
+                new Html5Qrcode(
+                    "reader"
+                );
+
+
+            await scanner.start(
+
+                preferredCamera.id,
+
+                config,
+
+                onQrDetected,
+
+                () => {
+                    /*
+                     * "No QR found" is normal.
+                     *
+                     * Do not display errors for every camera frame.
+                     */
+                }
+
+            );
+
+
+            cameraDot.classList.add(
+                "active"
+            );
+
+
+            cameraStatus.textContent =
+                "Camera: ACTIVE";
+
+
+            setMessage(
+                `Camera active: ${
+                    preferredCamera.label || "camera"
+                }`
+            );
+
+
+            setDebug(
+                "Camera successfully started."
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Camera startup failed:",
+                error
+            );
+
+
+            cameraDot.classList.remove(
+                "active"
+            );
+
+
+            cameraStatus.textContent =
+                "Camera: FAILED";
+
+
+            const errorMessage =
+                error && error.message
+                    ? error.message
+                    : String(error);
+
+
+            setMessage(
+                `Camera access failed: ${errorMessage}`,
+                "error"
+            );
+
+
+            setDebug(
+                `CAMERA ERROR: ${errorMessage}`
+            );
+
+        }
+
+    }
+
+
+    /*
+     * =========================================================
+     * EVENTS
+     * =========================================================
+     */
+
+    startTransferBtn.addEventListener(
+        "click",
+        startTransfer
+    );
+
+
+    captureBtn.addEventListener(
+        "click",
+        capturePendingChunk
+    );
+
+
+    downloadBtn.addEventListener(
+        "click",
+        downloadText
+    );
+
+
+    resetBtn.addEventListener(
+        "click",
+        resetTransfer
+    );
+
+
+    /*
+     * Start camera when page loads.
+     */
 
     startCamera();
 
 </script>
-```
 
 </body>
 </html>
