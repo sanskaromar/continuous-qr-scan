@@ -1,8 +1,10 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
 <title>QR Text Receiver</title>
 
 <style>
@@ -45,7 +47,12 @@ body {
     min-height: 100vh;
     background: var(--bg);
     color: var(--text);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
 }
 
 .app {
@@ -216,7 +223,7 @@ video {
 }
 
 #debugOutput {
-    min-height: 180px;
+    min-height: 160px;
 }
 
 .progress-track {
@@ -293,6 +300,7 @@ video {
     }
 }
 </style>
+
 </head>
 
 <body>
@@ -314,23 +322,20 @@ Expected Number of QR Codes
 <div class="setup-row">
 
 <input
-    id="expectedCount"
-    type="number"
-    min="1"
-    placeholder="Example: 50"
+id="expectedCount"
+type="number"
+min="1"
+placeholder="Example: 50"
+
 >
 
-<button
-    id="startTransferBtn"
-    class="primary"
->
+<button id="startTransferBtn" class="primary">
 Start Transfer
 </button>
 
 </div>
 
 </section>
-
 
 <section class="card">
 
@@ -342,11 +347,12 @@ Start Transfer
 <div id="videoContainer">
 
 <video
-    id="video"
-    autoplay
-    playsinline
-    muted
-></video>
+id="video"
+autoplay
+playsinline
+muted
+
+> </video>
 
 <div id="scanOverlay">
 <div class="scan-box"></div>
@@ -365,11 +371,12 @@ Zoom
 </label>
 
 <input
-    id="zoomSlider"
-    type="range"
-    min="1"
-    max="1"
-    step="0.1"
+id="zoomSlider"
+type="range"
+min="1"
+max="1"
+step="0.1"
+
 >
 
 <span id="zoomValue">1x</span>
@@ -402,7 +409,6 @@ Zoom
 
 </section>
 
-
 <section class="card">
 
 <span class="label">
@@ -420,16 +426,16 @@ Waiting for QR...
 ></textarea>
 
 <button
-    id="captureBtn"
-    class="success"
-    style="width:100%; margin-top:10px"
-    disabled
+id="captureBtn"
+class="success"
+style="width:100%; margin-top:10px"
+disabled
+
 >
-Capture This QR
-</button>
+
+Capture This QR </button>
 
 </section>
-
 
 <section class="card">
 
@@ -441,37 +447,34 @@ Capture This QR
 <div id="progressFill"></div>
 </div>
 
-<div
-    id="chunkGrid"
-    class="chunk-grid"
-></div>
+<div id="chunkGrid" class="chunk-grid"></div>
 
 </section>
-
 
 <section class="card">
 
 <div class="actions">
 
 <button
-    id="downloadBtn"
-    class="primary"
-    disabled
+id="downloadBtn"
+class="primary"
+disabled
+
 >
-Download Assembled Text
-</button>
+
+Download Assembled Text </button>
 
 <button
-    id="resetBtn"
-    class="danger"
+id="resetBtn"
+class="danger"
+
 >
-Clear / Reset
-</button>
+
+Clear / Reset </button>
 
 </div>
 
 </section>
-
 
 <section class="card">
 
@@ -485,7 +488,6 @@ Assembled Text
 ></textarea>
 
 </section>
-
 
 <section class="card">
 
@@ -502,7 +504,6 @@ Debug
 
 </main>
 
-
 <script>
 
 let stream = null;
@@ -518,8 +519,13 @@ let capturedCount = 0;
 let pendingText = null;
 let lockedText = null;
 
+let qrDetected = false;
+let waitingForNewQr = false;
+
 let framesProcessed = 0;
-let lastDetectionTime = 0;
+let lastScanTime = 0;
+
+const SCAN_INTERVAL = 100;
 
 const chunks = [];
 
@@ -528,87 +534,49 @@ const chunks = [];
 
 const video = document.getElementById("video");
 
-const cameraDot =
-    document.getElementById("cameraDot");
+const cameraDot = document.getElementById("cameraDot");
+const cameraStatus = document.getElementById("cameraStatus");
+const message = document.getElementById("message");
 
-const cameraStatus =
-    document.getElementById("cameraStatus");
+const expectedCount = document.getElementById("expectedCount");
+const startTransferBtn = document.getElementById("startTransferBtn");
 
-const message =
-    document.getElementById("message");
+const pendingInfo = document.getElementById("pendingInfo");
+const pendingData = document.getElementById("pendingData");
+const captureBtn = document.getElementById("captureBtn");
 
-const expectedCount =
-    document.getElementById("expectedCount");
+const progressText = document.getElementById("progressText");
+const progressFill = document.getElementById("progressFill");
+const chunkGrid = document.getElementById("chunkGrid");
 
-const startTransferBtn =
-    document.getElementById("startTransferBtn");
+const assembledOutput = document.getElementById("assembledOutput");
 
-const pendingInfo =
-    document.getElementById("pendingInfo");
+const downloadBtn = document.getElementById("downloadBtn");
+const resetBtn = document.getElementById("resetBtn");
 
-const pendingData =
-    document.getElementById("pendingData");
+const debugOutput = document.getElementById("debugOutput");
 
-const captureBtn =
-    document.getElementById("captureBtn");
+const resolutionInfo = document.getElementById("resolutionInfo");
+const decoderInfo = document.getElementById("decoderInfo");
+const frameInfo = document.getElementById("frameInfo");
+const detectionInfo = document.getElementById("detectionInfo");
 
-const progressText =
-    document.getElementById("progressText");
-
-const progressFill =
-    document.getElementById("progressFill");
-
-const chunkGrid =
-    document.getElementById("chunkGrid");
-
-const assembledOutput =
-    document.getElementById("assembledOutput");
-
-const downloadBtn =
-    document.getElementById("downloadBtn");
-
-const resetBtn =
-    document.getElementById("resetBtn");
-
-const debugOutput =
-    document.getElementById("debugOutput");
-
-const resolutionInfo =
-    document.getElementById("resolutionInfo");
-
-const decoderInfo =
-    document.getElementById("decoderInfo");
-
-const frameInfo =
-    document.getElementById("frameInfo");
-
-const detectionInfo =
-    document.getElementById("detectionInfo");
-
-const zoomRow =
-    document.getElementById("zoomRow");
-
-const zoomSlider =
-    document.getElementById("zoomSlider");
-
-const zoomValue =
-    document.getElementById("zoomValue");
+const zoomRow = document.getElementById("zoomRow");
+const zoomSlider = document.getElementById("zoomSlider");
+const zoomValue = document.getElementById("zoomValue");
 
 
 function setMessage(text, type = "") {
 
     message.textContent = text;
-
-    message.className =
-        `message ${type}`;
+    message.className = `message ${type}`;
 
 }
 
 
 function setDebug(text) {
 
-    const now =
-        new Date().toLocaleTimeString();
+    const now = new Date().toLocaleTimeString();
 
     debugOutput.value =
         `[${now}] ${text}`;
@@ -628,9 +596,7 @@ async function startCamera() {
         );
 
 
-        if (
-            !("BarcodeDetector" in window)
-        ) {
+        if (!("BarcodeDetector" in window)) {
 
             throw new Error(
                 "This browser does not expose BarcodeDetector."
@@ -639,10 +605,9 @@ async function startCamera() {
         }
 
 
-        detector =
-            new BarcodeDetector({
-                formats: ["qr_code"]
-            });
+        detector = new BarcodeDetector({
+            formats: ["qr_code"]
+        });
 
 
         decoderInfo.textContent =
@@ -726,16 +691,16 @@ async function startCamera() {
 
 
         setMessage(
-            "1080p camera active. Position the QR so it fills most of the preview.",
+            "1080p camera active. Scanning for QR...",
             "success"
         );
 
 
-        scanning =
-            true;
+        scanning = true;
 
 
-        scanLoop();
+        animationId =
+            requestAnimationFrame(scanLoop);
 
 
     } catch (error) {
@@ -820,7 +785,6 @@ function setupZoom() {
             const zoom =
                 Number(zoomSlider.value);
 
-
             try {
 
                 await videoTrack.applyConstraints({
@@ -835,10 +799,6 @@ function setupZoom() {
                 zoomValue.textContent =
                     `${zoom}x`;
 
-
-                setDebug(
-                    `Camera zoom set to ${zoom}x`
-                );
 
             } catch (error) {
 
@@ -855,15 +815,50 @@ function setupZoom() {
 
 
 /*
- * Continuous direct native QR scanning.
- * No throttling or pause optimizations added.
+ * Optimized scan loop.
+ *
+ * - Maximum 10 decode attempts per second.
+ * - Pauses expensive decoding after a successful QR read.
+ * - Continues lightweight checking after Capture so
+ *   the next different QR can be detected.
  */
 
-async function scanLoop() {
+async function scanLoop(timestamp) {
 
     if (!scanning) {
         return;
     }
+
+
+    /*
+     * QR is already decoded and waiting for the user
+     * to press Capture. Do not keep decoding it.
+     */
+
+    if (qrDetected) {
+
+        animationId =
+            requestAnimationFrame(scanLoop);
+
+        return;
+
+    }
+
+
+    if (
+        timestamp - lastScanTime <
+        SCAN_INTERVAL
+    ) {
+
+        animationId =
+            requestAnimationFrame(scanLoop);
+
+        return;
+
+    }
+
+
+    lastScanTime = timestamp;
 
 
     try {
@@ -876,23 +871,15 @@ async function scanLoop() {
             framesProcessed++;
 
 
-            if (
-                framesProcessed % 30 === 0
-            ) {
-
-                frameInfo.textContent =
-                    framesProcessed;
-
-            }
+            frameInfo.textContent =
+                framesProcessed;
 
 
             const results =
                 await detector.detect(video);
 
 
-            if (
-                results.length > 0
-            ) {
+            if (results.length > 0) {
 
                 handleDetectedQr(
                     results[0].rawValue
@@ -900,8 +887,17 @@ async function scanLoop() {
 
             } else {
 
-                detectionInfo.textContent =
-                    "Scanning";
+                if (waitingForNewQr) {
+
+                    detectionInfo.textContent =
+                        "Waiting for next QR";
+
+                } else {
+
+                    detectionInfo.textContent =
+                        "Scanning";
+
+                }
 
             }
 
@@ -918,27 +914,53 @@ async function scanLoop() {
 
 
     animationId =
-        requestAnimationFrame(
-            scanLoop
-        );
+        requestAnimationFrame(scanLoop);
 
 }
 
 
 function handleDetectedQr(decodedText) {
 
-    detectionInfo.textContent =
-        "QR DETECTED";
-
+    /*
+     * After Capture, the same QR will normally still
+     * be visible on the screen. Ignore it without
+     * adding another chunk.
+     */
 
     if (
+        waitingForNewQr &&
         decodedText === lockedText
     ) {
+
+        detectionInfo.textContent =
+            "Waiting for next QR";
 
         return;
 
     }
 
+
+    /*
+     * A genuinely different QR has appeared.
+     */
+
+    if (
+        waitingForNewQr &&
+        decodedText !== lockedText
+    ) {
+
+        waitingForNewQr =
+            false;
+
+        lockedText =
+            null;
+
+    }
+
+
+    /*
+     * Ignore repeated callbacks for the same pending QR.
+     */
 
     if (
         decodedText === pendingText
@@ -957,8 +979,16 @@ function handleDetectedQr(decodedText) {
         decodedText;
 
 
-    lastDetectionTime =
-        Date.now();
+    detectionInfo.textContent =
+        "QR DETECTED";
+
+
+    /*
+     * Pause expensive decoding immediately.
+     */
+
+    qrDetected =
+        true;
 
 
     if (totalChunks === null) {
@@ -993,12 +1023,13 @@ function handleDetectedQr(decodedText) {
             capturedCount + 1
         }.`;
 
+
     captureBtn.disabled =
         false;
 
 
     setMessage(
-        `Detected ${decodedText.length} characters.`,
+        `Detected ${decodedText.length} characters. Scanning paused.`,
         "success"
     );
 
@@ -1058,6 +1089,11 @@ function startTransfer() {
     );
 
 
+    /*
+     * A QR may have been detected before the user
+     * entered the expected count.
+     */
+
     if (
         pendingText &&
         pendingText !== lockedText
@@ -1092,6 +1128,14 @@ function capturePendingChunk() {
     }
 
 
+    /*
+     * Preserve the raw QR text exactly.
+     *
+     * No trim.
+     * No added spaces.
+     * No added newlines.
+     */
+
     chunks.push(
         pendingText
     );
@@ -1099,6 +1143,10 @@ function capturePendingChunk() {
 
     capturedCount++;
 
+
+    /*
+     * Remember this QR so it cannot be captured again.
+     */
 
     lockedText =
         pendingText;
@@ -1108,12 +1156,24 @@ function capturePendingChunk() {
         null;
 
 
+    pendingData.value =
+        "";
+
+
     captureBtn.disabled =
         true;
 
 
-    pendingData.value =
-        "";
+    /*
+     * Resume scanning, but reject the old QR until
+     * the user changes the QR shown on the other screen.
+     */
+
+    qrDetected =
+        false;
+
+    waitingForNewQr =
+        true;
 
 
     renderGrid();
@@ -1123,9 +1183,7 @@ function capturePendingChunk() {
     rebuildOutput();
 
 
-    if (
-        navigator.vibrate
-    ) {
+    if (navigator.vibrate) {
 
         navigator.vibrate(60);
 
@@ -1136,12 +1194,51 @@ function capturePendingChunk() {
         capturedCount === totalChunks
     ) {
 
+        /*
+         * Everything is captured.
+         * Stop the scan loop entirely.
+         */
+
+        scanning =
+            false;
+
+
+        if (animationId) {
+
+            cancelAnimationFrame(
+                animationId
+            );
+
+            animationId =
+                null;
+
+        }
+
+
+        waitingForNewQr =
+            false;
+
+
+        detectionInfo.textContent =
+            "COMPLETE";
+
+
         setMessage(
-            "All QR codes captured.",
+            "All QR codes captured. Scanner stopped.",
             "success"
         );
 
+
+        setDebug(
+            "Transfer complete. Scanner stopped."
+        );
+
+
     } else {
+
+        detectionInfo.textContent =
+            "Waiting for next QR";
+
 
         setMessage(
             `Captured ${capturedCount}/${totalChunks}. Change to the next QR.`,
@@ -1175,9 +1272,7 @@ function renderGrid() {
     ) {
 
         const cell =
-            document.createElement(
-                "div"
-            );
+            document.createElement("div");
 
 
         cell.className =
@@ -1229,8 +1324,7 @@ function updateProgress() {
 
 
     const percentage =
-        capturedCount /
-        totalChunks *
+        (capturedCount / totalChunks) *
         100;
 
 
@@ -1247,13 +1341,16 @@ function updateProgress() {
 
 
     downloadBtn.disabled =
-        capturedCount !==
-        totalChunks;
+        capturedCount !== totalChunks;
 
 }
 
 
 function rebuildOutput() {
+
+    /*
+     * Tight concatenation.
+     */
 
     assembledOutput.value =
         chunks.join("");
@@ -1264,10 +1361,11 @@ function rebuildOutput() {
 function downloadText() {
 
     if (
-        capturedCount !==
-        totalChunks
+        capturedCount !== totalChunks
     ) {
+
         return;
+
     }
 
 
@@ -1286,15 +1384,11 @@ function downloadText() {
 
 
     const url =
-        URL.createObjectURL(
-            blob
-        );
+        URL.createObjectURL(blob);
 
 
     const link =
-        document.createElement(
-            "a"
-        );
+        document.createElement("a");
 
 
     link.href =
@@ -1305,9 +1399,7 @@ function downloadText() {
         "extracted_data.txt";
 
 
-    document.body.appendChild(
-        link
-    );
+    document.body.appendChild(link);
 
 
     link.click();
@@ -1317,8 +1409,7 @@ function downloadText() {
 
 
     setTimeout(
-        () =>
-            URL.revokeObjectURL(url),
+        () => URL.revokeObjectURL(url),
         1000
     );
 
@@ -1338,7 +1429,9 @@ function resetTransfer() {
             "Clear all captured data?"
         )
     ) {
+
         return;
+
     }
 
 
@@ -1357,6 +1450,12 @@ function resetTransfer() {
 
     lockedText =
         null;
+
+    qrDetected =
+        false;
+
+    waitingForNewQr =
+        false;
 
 
     expectedCount.value =
@@ -1386,8 +1485,10 @@ function resetTransfer() {
     progressText.textContent =
         "Captured: 0 / ?";
 
+
     progressFill.style.width =
         "0%";
+
 
     chunkGrid.innerHTML =
         "";
@@ -1397,8 +1498,29 @@ function resetTransfer() {
         "Waiting for QR...";
 
 
+    detectionInfo.textContent =
+        "Scanning";
+
+
+    /*
+     * If the transfer had completed, restart scanning.
+     */
+
+    if (!scanning) {
+
+        scanning =
+            true;
+
+        animationId =
+            requestAnimationFrame(
+                scanLoop
+            );
+
+    }
+
+
     setMessage(
-        "Transfer reset. Camera remains active."
+        "Transfer reset. Scanner active."
     );
 
 }
@@ -1409,21 +1531,28 @@ startTransferBtn.addEventListener(
     startTransfer
 );
 
+
 captureBtn.addEventListener(
     "click",
     capturePendingChunk
 );
+
 
 downloadBtn.addEventListener(
     "click",
     downloadText
 );
 
+
 resetBtn.addEventListener(
     "click",
     resetTransfer
 );
 
+
+/*
+ * Start camera and scanner.
+ */
 
 startCamera();
 
