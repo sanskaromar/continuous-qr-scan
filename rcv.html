@@ -1,1268 +1,1282 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8">
 
-```
 <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
 >
 
-<title>Dense QR Text Receiver</title>
-
-<!--
-    html5-qrcode:
-    - Uses native BarcodeDetector where supported.
-    - Falls back to its normal QR decoding pipeline.
--->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<title>QR Text Receiver</title>
 
 <style>
+:root {
+    --bg: #0b1020;
+    --card: #151c2e;
+    --card2: #1d263b;
+    --border: #2d3a58;
+    --text: #edf2ff;
+    --muted: #a2aec4;
+    --primary: #4f8cff;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --missing: #26324a;
+}
+
+@media (prefers-color-scheme: light) {
     :root {
-        color-scheme: dark light;
-
-        --bg: #0b1020;
-        --card: #151c2e;
-        --card2: #1d263b;
-        --border: #2d3a58;
-        --text: #edf2ff;
-        --muted: #a2aec4;
-
-        --primary: #4f8cff;
-        --success: #22c55e;
-        --danger: #ef4444;
-        --warning: #f59e0b;
-
-        --missing: #26324a;
+        --bg: #eef2f7;
+        --card: #ffffff;
+        --card2: #f5f7fa;
+        --border: #d7deea;
+        --text: #182033;
+        --muted: #64748b;
+        --primary: #2563eb;
+        --success: #16a34a;
+        --danger: #dc2626;
+        --warning: #d97706;
+        --missing: #e5eaf1;
     }
-
-    @media (prefers-color-scheme: light) {
-        :root {
-            --bg: #eef2f7;
-            --card: #ffffff;
-            --card2: #f5f7fa;
-            --border: #d7deea;
-            --text: #182033;
-            --muted: #64748b;
-
-            --primary: #2563eb;
-            --success: #16a34a;
-            --danger: #dc2626;
-            --warning: #d97706;
-
-            --missing: #e5eaf1;
-        }
-    }
-
-    * {
-        box-sizing: border-box;
-    }
-
-    body {
-        margin: 0;
-        min-height: 100vh;
-
-        background: var(--bg);
-        color: var(--text);
-
-        font-family:
-            system-ui,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            sans-serif;
-    }
-
-    .app {
-        width: min(100%, 960px);
-        margin: 0 auto;
-        padding: 16px;
-    }
-
-    h1 {
-        margin: 0 0 8px;
-        font-size: clamp(1.6rem, 5vw, 2.3rem);
-    }
-
-    .subtitle {
-        margin: 0 0 20px;
-        color: var(--muted);
-        line-height: 1.5;
-    }
-
-    .card {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 16px;
-
-        padding: 16px;
-        margin-bottom: 16px;
-    }
-
-    .label {
-        display: block;
-        margin-bottom: 8px;
-
-        font-size: 0.8rem;
-        font-weight: 800;
-
-        color: var(--muted);
-
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .setup-row {
-        display: flex;
-        gap: 10px;
-    }
-
-    input[type="number"] {
-        flex: 1;
-        min-width: 0;
-
-        padding: 13px;
-
-        border-radius: 10px;
-        border: 1px solid var(--border);
-
-        background: var(--card2);
-        color: var(--text);
-
-        font: inherit;
-    }
-
-    button {
-        border: 0;
-        border-radius: 10px;
-
-        padding: 13px 16px;
-
-        font: inherit;
-        font-weight: 700;
-
-        cursor: pointer;
-    }
-
-    button:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-
-    .primary-btn {
-        background: var(--primary);
-        color: white;
-    }
-
-    .capture-btn {
-        width: 100%;
-        margin-top: 12px;
-
-        background: var(--success);
-        color: white;
-    }
-
-    .download-btn {
-        background: var(--primary);
-        color: white;
-    }
-
-    .reset-btn {
-        background: var(--danger);
-        color: white;
-    }
-
-    .camera-status {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-
-        margin-bottom: 12px;
-
-        font-weight: 700;
-    }
-
-    .dot {
-        width: 12px;
-        height: 12px;
-
-        border-radius: 50%;
-
-        background: var(--danger);
-
-        flex: 0 0 auto;
-    }
-
-    .dot.active {
-        background: var(--success);
-    }
-
-    #reader {
-        width: 100%;
-        min-height: 400px;
-
-        overflow: hidden;
-
-        border-radius: 12px;
-
-        background: #000;
-    }
-
-    #reader video {
-        width: 100% !important;
-        height: auto !important;
-
-        object-fit: contain !important;
-
-        border-radius: 12px;
-    }
-
-    .message {
-        min-height: 24px;
-        margin-top: 12px;
-
-        color: var(--muted);
-        line-height: 1.4;
-    }
-
-    .message.success {
-        color: var(--success);
-    }
-
-    .message.error {
-        color: var(--danger);
-    }
-
-    .message.warning {
-        color: var(--warning);
-    }
-
-    .preview-info {
-        padding: 12px;
-
-        border-radius: 10px;
-
-        background: var(--card2);
-        border: 1px solid var(--border);
-
-        font-weight: 700;
-    }
-
-    textarea {
-        width: 100%;
-
-        margin-top: 10px;
-        padding: 12px;
-
-        border-radius: 10px;
-        border: 1px solid var(--border);
-
-        background: var(--card2);
-        color: var(--text);
-
-        font: 0.85rem/1.45 monospace;
-
-        resize: vertical;
-    }
-
-    #pendingData {
-        min-height: 130px;
-    }
-
-    #assembledOutput {
-        min-height: 300px;
-    }
-
-    #debugOutput {
-        min-height: 120px;
-    }
-
-    .progress-row {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-
-        font-weight: 700;
-
-        margin-bottom: 10px;
-    }
-
-    .progress-track {
-        width: 100%;
-        height: 14px;
-
-        border-radius: 999px;
-
-        overflow: hidden;
-
-        background: var(--missing);
-        border: 1px solid var(--border);
-    }
-
-    #progressFill {
-        width: 0%;
-        height: 100%;
-
-        background: var(--primary);
-
-        transition: width 0.2s ease;
-    }
-
-    #progressFill.complete {
-        background: var(--success);
-    }
-
-    .chunk-grid {
-        display: grid;
-
-        grid-template-columns:
-            repeat(auto-fill, minmax(40px, 1fr));
-
-        gap: 6px;
-
-        margin-top: 16px;
-
-        max-height: 280px;
-        overflow-y: auto;
-    }
-
-    .chunk {
-        aspect-ratio: 1;
-
-        display: grid;
-        place-items: center;
-
-        background: var(--missing);
-
-        border: 1px solid var(--border);
-        border-radius: 7px;
-
-        color: var(--muted);
-
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    .chunk.captured {
-        background: var(--success);
-        border-color: var(--success);
-
-        color: white;
-    }
-
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+.app {
+    width: min(100%, 960px);
+    margin: auto;
+    padding: 16px;
+}
+
+h1 {
+    margin: 0 0 8px;
+    font-size: 1.8rem;
+}
+
+.subtitle {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+}
+
+input,
+textarea,
+button {
+    font: inherit;
+}
+
+input[type="number"],
+textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card2);
+    color: var(--text);
+}
+
+textarea {
+    font-family: monospace;
+    resize: vertical;
+}
+
+button {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.primary {
+    background: var(--primary);
+    color: white;
+}
+
+.success {
+    background: var(--success);
+    color: white;
+}
+
+.danger {
+    background: var(--danger);
+    color: white;
+}
+
+.setup-row,
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.setup-row input {
+    flex: 1;
+}
+
+.camera-status {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.dot {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--danger);
+    margin-right: 6px;
+}
+
+.dot.active {
+    background: var(--success);
+}
+
+#videoContainer {
+    position: relative;
+    width: 100%;
+    background: black;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+video {
+    width: 100%;
+    display: block;
+    max-height: 70vh;
+    object-fit: contain;
+    background: black;
+}
+
+#scanOverlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+}
+
+.scan-box {
+    width: min(80vw, 500px);
+    aspect-ratio: 1;
+    border: 3px solid var(--primary);
+    border-radius: 12px;
+}
+
+.message {
+    margin-top: 10px;
+    min-height: 24px;
+    color: var(--muted);
+}
+
+.message.success {
+    color: var(--success);
+}
+
+.message.error {
+    color: var(--danger);
+}
+
+.message.warning {
+    color: var(--warning);
+}
+
+#pendingData {
+    min-height: 180px;
+}
+
+#assembledOutput {
+    min-height: 350px;
+}
+
+#debugOutput {
+    min-height: 180px;
+}
+
+.progress-track {
+    height: 14px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--missing);
+    margin: 10px 0;
+}
+
+#progressFill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary);
+    transition: width 0.2s;
+}
+
+.chunk-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(38px, 1fr));
+    gap: 6px;
+    max-height: 250px;
+    overflow: auto;
+}
+
+.chunk {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    background: var(--missing);
+    border-radius: 6px;
+    font-size: 0.75rem;
+}
+
+.chunk.captured {
+    background: var(--success);
+    color: white;
+}
+
+.range-row {
+    display: none;
+    gap: 10px;
+    align-items: center;
+    margin-top: 14px;
+}
+
+.range-row input {
+    flex: 1;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.info {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+    .setup-row,
     .actions {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        flex-direction: column;
     }
 
-    .small-note {
-        margin-top: 10px;
-
-        color: var(--muted);
-
-        font-size: 0.85rem;
-        line-height: 1.45;
+    video {
+        min-height: 450px;
     }
-
-    .tech-status {
-        display: inline-block;
-
-        padding: 5px 9px;
-
-        border-radius: 999px;
-
-        background: var(--card2);
-        border: 1px solid var(--border);
-
-        color: var(--muted);
-
-        font-size: 0.8rem;
-        font-weight: 700;
-    }
-
-    @media (max-width: 600px) {
-        .setup-row {
-            flex-direction: column;
-        }
-
-        .actions {
-            grid-template-columns: 1fr;
-        }
-
-        #reader {
-            min-height: 460px;
-        }
-    }
+}
 </style>
-```
-
 </head>
 
 <body>
 
 <main class="app">
 
-```
-<h1>Dense QR Text Receiver</h1>
+<h1>QR Text Receiver</h1>
 
 <p class="subtitle">
-    Optimized for large, dense QR payloads. QR data is captured as raw
-    text and concatenated exactly in manual capture order.
+Capture raw-text QR codes manually and concatenate them exactly in capture order.
 </p>
 
-
-<!-- SETUP -->
-
 <section class="card">
 
-    <label
-        class="label"
-        for="expectedCount"
-    >
-        Number of QR Codes Expected
-    </label>
+<label class="label">
+Expected Number of QR Codes
+</label>
 
-    <div class="setup-row">
+<div class="setup-row">
 
-        <input
-            id="expectedCount"
-            type="number"
-            min="1"
-            inputmode="numeric"
-            placeholder="Example: 50"
-        >
+<input
+    id="expectedCount"
+    type="number"
+    min="1"
+    placeholder="Example: 50"
+>
 
-        <button
-            id="startTransferBtn"
-            class="primary-btn"
-            type="button"
-        >
-            Start Transfer
-        </button>
+<button
+    id="startTransferBtn"
+    class="primary"
+>
+Start Transfer
+</button>
 
-    </div>
-
-    <div class="small-note">
-        QR codes contain raw text only. Capture them in the same order
-        they are displayed.
-    </div>
+</div>
 
 </section>
 
 
-<!-- CAMERA -->
-
 <section class="card">
 
-    <div class="camera-status">
+<div class="camera-status">
+<span id="cameraDot" class="dot"></span>
+<span id="cameraStatus">Camera: starting...</span>
+</div>
 
-        <span
-            id="cameraDot"
-            class="dot"
-        ></span>
+<div id="videoContainer">
 
-        <span id="cameraStatus">
-            Camera: starting...
-        </span>
+<video
+    id="video"
+    autoplay
+    playsinline
+    muted
+></video>
 
-    </div>
+<div id="scanOverlay">
+<div class="scan-box"></div>
+</div>
 
-    <span
-        id="techStatus"
-        class="tech-status"
-    >
-        Scanner: initializing...
-    </span>
+</div>
 
-    <div style="height: 12px;"></div>
+<div id="message" class="message">
+Initializing...
+</div>
 
-    <div id="reader"></div>
+<div class="range-row" id="zoomRow">
 
-    <div
-        id="message"
-        class="message"
-    >
-        Requesting camera access...
-    </div>
+<label for="zoomSlider">
+Zoom
+</label>
+
+<input
+    id="zoomSlider"
+    type="range"
+    min="1"
+    max="1"
+    step="0.1"
+>
+
+<span id="zoomValue">1x</span>
+
+</div>
+
+<div class="info-grid">
+
+<div class="info">
+<strong>Camera resolution</strong><br>
+<span id="resolutionInfo">Unknown</span>
+</div>
+
+<div class="info">
+<strong>Decoder</strong><br>
+<span id="decoderInfo">Checking...</span>
+</div>
+
+<div class="info">
+<strong>Frames processed</strong><br>
+<span id="frameInfo">0</span>
+</div>
+
+<div class="info">
+<strong>Detection</strong><br>
+<span id="detectionInfo">Waiting</span>
+</div>
+
+</div>
 
 </section>
 
 
-<!-- CURRENT QR -->
-
 <section class="card">
 
-    <span class="label">
-        Current QR Detected
-    </span>
+<span class="label">
+Current QR Detected
+</span>
 
-    <div
-        id="pendingInfo"
-        class="preview-info"
-    >
-        Waiting for a QR...
-    </div>
+<div id="pendingInfo">
+Waiting for QR...
+</div>
 
-    <textarea
-        id="pendingData"
-        readonly
-        placeholder="Decoded QR text will appear here..."
-    ></textarea>
+<textarea
+    id="pendingData"
+    readonly
+    placeholder="Decoded text appears here..."
+></textarea>
 
-    <button
-        id="captureBtn"
-        class="capture-btn"
-        type="button"
-        disabled
-    >
-        Capture This QR
-    </button>
-
-    <div class="small-note">
-        After capture, change the QR displayed on the Mac. The receiver
-        waits for different QR text before enabling capture again.
-    </div>
+<button
+    id="captureBtn"
+    class="success"
+    style="width:100%; margin-top:10px"
+    disabled
+>
+Capture This QR
+</button>
 
 </section>
 
 
-<!-- PROGRESS -->
-
 <section class="card">
 
-    <div class="progress-row">
+<div>
+<strong id="progressText">Captured: 0 / ?</strong>
+</div>
 
-        <span>
-            Progress
-        </span>
+<div class="progress-track">
+<div id="progressFill"></div>
+</div>
 
-        <span id="progressText">
-            Captured: 0 / ?
-        </span>
-
-    </div>
-
-    <div class="progress-track">
-        <div id="progressFill"></div>
-    </div>
-
-    <div
-        id="chunkGrid"
-        class="chunk-grid"
-    ></div>
+<div
+    id="chunkGrid"
+    class="chunk-grid"
+></div>
 
 </section>
 
 
-<!-- ACTIONS -->
-
 <section class="card">
 
-    <div class="actions">
+<div class="actions">
 
-        <button
-            id="downloadBtn"
-            class="download-btn"
-            type="button"
-            disabled
-        >
-            Download Assembled Text
-        </button>
+<button
+    id="downloadBtn"
+    class="primary"
+    disabled
+>
+Download Assembled Text
+</button>
 
-        <button
-            id="resetBtn"
-            class="reset-btn"
-            type="button"
-        >
-            Clear / Reset
-        </button>
+<button
+    id="resetBtn"
+    class="danger"
+>
+Clear / Reset
+</button>
 
-    </div>
+</div>
 
 </section>
 
 
-<!-- OUTPUT -->
-
 <section class="card">
 
-    <span class="label">
-        Assembled Text
-    </span>
+<span class="label">
+Assembled Text
+</span>
 
-    <textarea
-        id="assembledOutput"
-        readonly
-        placeholder="Captured text will be assembled here..."
-    ></textarea>
+<textarea
+    id="assembledOutput"
+    readonly
+></textarea>
 
 </section>
 
 
-<!-- DEBUG -->
-
 <section class="card">
 
-    <span class="label">
-        Debug Information
-    </span>
+<span class="label">
+Debug
+</span>
 
-    <textarea
-        id="debugOutput"
-        readonly
-    >Initializing...</textarea>
+<textarea
+    id="debugOutput"
+    readonly
+></textarea>
 
 </section>
-```
 
 </main>
 
+
 <script>
 
-    /*
-     * =========================================================
-     * STATE
-     * =========================================================
-     */
+let stream = null;
+let videoTrack = null;
+let detector = null;
 
-    let scanner = null;
+let scanning = false;
+let animationId = null;
 
-    let totalChunks = null;
+let totalChunks = null;
+let capturedCount = 0;
 
-    let capturedCount = 0;
+let pendingText = null;
+let lockedText = null;
 
-    let pendingText = null;
+let framesProcessed = 0;
+let lastDetectionTime = 0;
 
-    let lockedText = null;
-
-    const chunks = [];
-
-
-    /*
-     * =========================================================
-     * DOM
-     * =========================================================
-     */
-
-    const expectedCount =
-        document.getElementById("expectedCount");
-
-    const startTransferBtn =
-        document.getElementById("startTransferBtn");
-
-    const cameraDot =
-        document.getElementById("cameraDot");
-
-    const cameraStatus =
-        document.getElementById("cameraStatus");
-
-    const techStatus =
-        document.getElementById("techStatus");
-
-    const message =
-        document.getElementById("message");
-
-    const pendingInfo =
-        document.getElementById("pendingInfo");
-
-    const pendingData =
-        document.getElementById("pendingData");
-
-    const captureBtn =
-        document.getElementById("captureBtn");
-
-    const progressText =
-        document.getElementById("progressText");
-
-    const progressFill =
-        document.getElementById("progressFill");
-
-    const chunkGrid =
-        document.getElementById("chunkGrid");
-
-    const assembledOutput =
-        document.getElementById("assembledOutput");
-
-    const downloadBtn =
-        document.getElementById("downloadBtn");
-
-    const resetBtn =
-        document.getElementById("resetBtn");
-
-    const debugOutput =
-        document.getElementById("debugOutput");
+const chunks = [];
 
 
-    /*
-     * =========================================================
-     * HELPERS
-     * =========================================================
-     */
+/* DOM */
 
-    function setMessage(text, type = "") {
+const video = document.getElementById("video");
 
-        message.textContent = text;
+const cameraDot =
+    document.getElementById("cameraDot");
 
-        message.className =
-            `message ${type}`.trim();
+const cameraStatus =
+    document.getElementById("cameraStatus");
 
-    }
+const message =
+    document.getElementById("message");
+
+const expectedCount =
+    document.getElementById("expectedCount");
+
+const startTransferBtn =
+    document.getElementById("startTransferBtn");
+
+const pendingInfo =
+    document.getElementById("pendingInfo");
+
+const pendingData =
+    document.getElementById("pendingData");
+
+const captureBtn =
+    document.getElementById("captureBtn");
+
+const progressText =
+    document.getElementById("progressText");
+
+const progressFill =
+    document.getElementById("progressFill");
+
+const chunkGrid =
+    document.getElementById("chunkGrid");
+
+const assembledOutput =
+    document.getElementById("assembledOutput");
+
+const downloadBtn =
+    document.getElementById("downloadBtn");
+
+const resetBtn =
+    document.getElementById("resetBtn");
+
+const debugOutput =
+    document.getElementById("debugOutput");
+
+const resolutionInfo =
+    document.getElementById("resolutionInfo");
+
+const decoderInfo =
+    document.getElementById("decoderInfo");
+
+const frameInfo =
+    document.getElementById("frameInfo");
+
+const detectionInfo =
+    document.getElementById("detectionInfo");
+
+const zoomRow =
+    document.getElementById("zoomRow");
+
+const zoomSlider =
+    document.getElementById("zoomSlider");
+
+const zoomValue =
+    document.getElementById("zoomValue");
 
 
-    function setDebug(text) {
+function setMessage(text, type = "") {
 
-        const timestamp =
-            new Date().toLocaleTimeString();
+    message.textContent = text;
 
-        debugOutput.value =
-            `[${timestamp}] ${text}`;
+    message.className =
+        `message ${type}`;
 
-    }
-
-
-    /*
-     * =========================================================
-     * START TRANSFER
-     * =========================================================
-     */
-
-    function startTransfer() {
-
-        if (capturedCount > 0) {
-
-            setMessage(
-                "Clear the current transfer before starting another one.",
-                "warning"
-            );
-
-            return;
-
-        }
+}
 
 
-        const count =
-            Number.parseInt(
-                expectedCount.value,
-                10
-            );
+function setDebug(text) {
+
+    const now =
+        new Date().toLocaleTimeString();
+
+    debugOutput.value =
+        `[${now}] ${text}`;
+
+}
+
+
+async function startCamera() {
+
+    try {
+
+        cameraStatus.textContent =
+            "Camera: requesting...";
+
+        setMessage(
+            "Requesting high-resolution camera..."
+        );
 
 
         if (
-            !Number.isInteger(count) ||
-            count < 1
+            !("BarcodeDetector" in window)
         ) {
 
-            setMessage(
-                "Enter a valid number of QR codes.",
-                "error"
+            throw new Error(
+                "This browser does not expose BarcodeDetector."
             );
 
-            return;
-
         }
 
 
-        totalChunks = count;
-
-        expectedCount.disabled = true;
-
-        startTransferBtn.disabled = true;
-
-
-        renderGrid();
-
-        updateProgress();
+        detector =
+            new BarcodeDetector({
+                formats: ["qr_code"]
+            });
 
 
-        pendingInfo.textContent =
-            `Transfer ready. Scan QR 1 of ${totalChunks}.`;
-
-
-        setMessage(
-            `Ready to capture ${totalChunks} QR codes.`,
-            "success"
-        );
-
-
-        setDebug(
-            `Transfer started. Expecting ${totalChunks} QR codes.`
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * QR DETECTED
-     * =========================================================
-     */
-
-    function onQrDetected(decodedText) {
-
-        if (totalChunks === null) {
-
-            pendingInfo.textContent =
-                "Enter the expected QR count, then press Start Transfer.";
-
-            pendingData.value =
-                decodedText;
-
-            captureBtn.disabled = true;
-
-            return;
-
-        }
-
-
-        if (capturedCount >= totalChunks) {
-
-            captureBtn.disabled = true;
-
-            return;
-
-        }
+        decoderInfo.textContent =
+            "Native BarcodeDetector";
 
 
         /*
-         * Prevent immediately re-detecting and recapturing
-         * the QR that was just stored.
-         */
-
-        if (decodedText === lockedText) {
-
-            return;
-
-        }
-
-
-        /*
-         * A different QR is now visible.
-         */
-
-        lockedText = null;
-
-
-        /*
-         * Ignore repeated callbacks for the same pending QR.
-         */
-
-        if (decodedText === pendingText) {
-
-            return;
-
-        }
-
-
-        pendingText =
-            decodedText;
-
-
-        pendingInfo.textContent =
-            `Ready to capture QR ${capturedCount + 1} of ${totalChunks}.`;
-
-
-        pendingData.value =
-            decodedText;
-
-
-        captureBtn.disabled = false;
-
-
-        setMessage(
-            `QR detected: ${decodedText.length} characters. Press Capture This QR.`,
-            "success"
-        );
-
-
-        setDebug(
-            `Decoded ${decodedText.length} characters. Ready for capture #${capturedCount + 1}.`
-        );
-
-    }
-
-
-    /*
-     * =========================================================
-     * MANUAL CAPTURE
-     * =========================================================
-     */
-
-    function capturePendingChunk() {
-
-        if (pendingText === null) {
-
-            setMessage(
-                "No new QR is ready to capture.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-
-        if (totalChunks === null) {
-
-            return;
-
-        }
-
-
-        if (capturedCount >= totalChunks) {
-
-            return;
-
-        }
-
-
-        /*
-         * Store exactly as decoded.
+         * Request high resolution.
          *
-         * No trim().
-         * No separators.
-         * No added newlines.
+         * exact is deliberately avoided because some
+         * Android browsers reject unsupported resolutions.
          */
 
-        chunks.push(
-            pendingText
+        const constraints = {
+
+            audio: false,
+
+            video: {
+
+                facingMode: {
+                    ideal: "environment"
+                },
+
+                width: {
+                    ideal: 3840
+                },
+
+                height: {
+                    ideal: 2160
+                },
+
+                frameRate: {
+                    ideal: 30,
+                    max: 60
+                }
+
+            }
+
+        };
+
+
+        stream =
+            await navigator.mediaDevices.getUserMedia(
+                constraints
+            );
+
+
+        videoTrack =
+            stream.getVideoTracks()[0];
+
+
+        video.srcObject =
+            stream;
+
+
+        await video.play();
+
+
+        /*
+         * Report actual camera settings.
+         */
+
+        const settings =
+            videoTrack.getSettings();
+
+
+        resolutionInfo.textContent =
+            `${settings.width || video.videoWidth} × ${
+                settings.height || video.videoHeight
+            }`;
+
+
+        setDebug(
+            `Camera active. Actual stream: ${
+                settings.width || video.videoWidth
+            }x${
+                settings.height || video.videoHeight
+            }.`
         );
 
 
-        capturedCount++;
+        /*
+         * Enable zoom if the camera exposes it.
+         */
+
+        setupZoom();
 
 
-        lockedText =
-            pendingText;
+        cameraDot.classList.add(
+            "active"
+        );
 
 
-        pendingText =
-            null;
+        cameraStatus.textContent =
+            "Camera: ACTIVE";
 
 
-        captureBtn.disabled =
+        setMessage(
+            "High-resolution camera active. Position the QR so it fills most of the preview.",
+            "success"
+        );
+
+
+        scanning =
             true;
 
 
-        pendingInfo.textContent =
-            `QR ${capturedCount} captured. Change the QR on the Mac.`;
+        scanLoop();
 
 
-        renderGrid();
+    } catch (error) {
 
-        updateProgress();
+        console.error(error);
 
-        rebuildOutput();
+        cameraStatus.textContent =
+            "Camera: FAILED";
+
+        setMessage(
+            error.message || String(error),
+            "error"
+        );
+
+        setDebug(
+            `CAMERA ERROR: ${
+                error.message || String(error)
+            }`
+        );
+
+    }
+
+}
 
 
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
+function setupZoom() {
+
+    if (!videoTrack) {
+        return;
+    }
 
 
-        if (capturedCount === totalChunks) {
+    const capabilities =
+        videoTrack.getCapabilities
+            ? videoTrack.getCapabilities()
+            : {};
 
-            setMessage(
-                "All QR codes captured. Assembled text is complete.",
-                "success"
-            );
 
-            setDebug(
-                `Transfer complete: ${capturedCount}/${totalChunks}.`
-            );
+    if (!capabilities.zoom) {
 
-        } else {
+        setDebug(
+            "Camera zoom is not exposed by this browser."
+        );
 
-            setMessage(
-                `Captured ${capturedCount}/${totalChunks}. Show QR ${capturedCount + 1}.`,
-                "success"
-            );
-
-            setDebug(
-                `Captured QR ${capturedCount}. Waiting for next QR.`
-            );
-
-        }
+        return;
 
     }
 
 
-    /*
-     * =========================================================
-     * PROGRESS GRID
-     * =========================================================
-     */
-
-    function renderGrid() {
-
-        chunkGrid.innerHTML =
-            "";
+    zoomRow.style.display =
+        "flex";
 
 
-        if (totalChunks === null) {
-            return;
-        }
+    zoomSlider.min =
+        capabilities.zoom.min;
 
 
-        const fragment =
-            document.createDocumentFragment();
+    zoomSlider.max =
+        capabilities.zoom.max;
 
 
-        for (
-            let index = 1;
-            index <= totalChunks;
-            index++
-        ) {
-
-            const cell =
-                document.createElement("div");
+    zoomSlider.step =
+        capabilities.zoom.step || 0.1;
 
 
-            cell.className =
-                "chunk";
+    const settings =
+        videoTrack.getSettings();
 
 
-            if (index <= capturedCount) {
+    zoomSlider.value =
+        settings.zoom || capabilities.zoom.min;
 
-                cell.classList.add(
-                    "captured"
+
+    zoomValue.textContent =
+        `${zoomSlider.value}x`;
+
+
+    zoomSlider.addEventListener(
+        "input",
+        async () => {
+
+            const zoom =
+                Number(zoomSlider.value);
+
+
+            try {
+
+                await videoTrack.applyConstraints({
+
+                    advanced: [
+                        { zoom }
+                    ]
+
+                });
+
+
+                zoomValue.textContent =
+                    `${zoom}x`;
+
+
+                setDebug(
+                    `Camera zoom set to ${zoom}x`
+                );
+
+            } catch (error) {
+
+                setDebug(
+                    `Zoom error: ${error.message}`
                 );
 
             }
 
-
-            cell.textContent =
-                index;
-
-
-            fragment.appendChild(
-                cell
-            );
-
         }
+    );
+
+}
 
 
-        chunkGrid.appendChild(
-            fragment
-        );
+/*
+ * Direct native scan loop.
+ *
+ * requestAnimationFrame means the detector receives
+ * frames as quickly as the browser can practically
+ * provide them.
+ */
 
+async function scanLoop() {
+
+    if (!scanning) {
+        return;
     }
 
 
-    /*
-     * =========================================================
-     * PROGRESS
-     * =========================================================
-     */
-
-    function updateProgress() {
-
-        if (totalChunks === null) {
-
-            progressText.textContent =
-                "Captured: 0 / ?";
-
-            progressFill.style.width =
-                "0%";
-
-            downloadBtn.disabled =
-                true;
-
-            return;
-
-        }
-
-
-        const percentage =
-            (capturedCount / totalChunks) * 100;
-
-
-        progressText.textContent =
-            `Captured: ${capturedCount} / ${totalChunks}`;
-
-
-        progressFill.style.width =
-            `${percentage}%`;
-
-
-        const complete =
-            capturedCount === totalChunks;
-
-
-        progressFill.classList.toggle(
-            "complete",
-            complete
-        );
-
-
-        downloadBtn.disabled =
-            !complete;
-
-    }
-
-
-    /*
-     * =========================================================
-     * ASSEMBLE TEXT
-     * =========================================================
-     */
-
-    function rebuildOutput() {
-
-        assembledOutput.value =
-            chunks.join("");
-
-    }
-
-
-    /*
-     * =========================================================
-     * DOWNLOAD
-     * =========================================================
-     */
-
-    function downloadText() {
+    try {
 
         if (
-            totalChunks === null ||
-            capturedCount !== totalChunks
+            video.readyState >=
+            HTMLMediaElement.HAVE_CURRENT_DATA
         ) {
 
-            setMessage(
-                "Transfer is not complete.",
-                "error"
-            );
+            framesProcessed++;
 
-            return;
+
+            if (
+                framesProcessed % 30 === 0
+            ) {
+
+                frameInfo.textContent =
+                    framesProcessed;
+
+            }
+
+
+            const results =
+                await detector.detect(video);
+
+
+            if (
+                results.length > 0
+            ) {
+
+                const decodedText =
+                    results[0].rawValue;
+
+
+                handleDetectedQr(
+                    decodedText
+                );
+
+            } else {
+
+                detectionInfo.textContent =
+                    "Scanning";
+
+            }
 
         }
 
+    } catch (error) {
 
-        const output =
-            chunks.join("");
+        /*
+         * Do not stop the scanner on a single
+         * bad frame.
+         */
 
-
-        const blob =
-            new Blob(
-                [output],
-                {
-                    type: "text/plain;charset=utf-8"
-                }
-            );
-
-
-        const url =
-            URL.createObjectURL(
-                blob
-            );
-
-
-        const link =
-            document.createElement(
-                "a"
-            );
-
-
-        link.href =
-            url;
-
-
-        link.download =
-            "extracted_data.txt";
-
-
-        document.body.appendChild(
-            link
-        );
-
-
-        link.click();
-
-
-        link.remove();
-
-
-        setTimeout(
-            () => URL.revokeObjectURL(url),
-            1000
-        );
-
-
-        setMessage(
-            "Download started: extracted_data.txt",
-            "success"
-        );
-
-
-        setDebug(
-            `Downloaded ${output.length} characters.`
+        console.warn(
+            "Scan error:",
+            error
         );
 
     }
 
 
+    animationId =
+        requestAnimationFrame(
+            scanLoop
+        );
+
+}
+
+
+function handleDetectedQr(decodedText) {
+
+    detectionInfo.textContent =
+        "QR DETECTED";
+
+
     /*
-     * =========================================================
-     * RESET
-     * =========================================================
+     * If this is the QR already captured,
+     * ignore it completely.
      */
 
-    function resetTransfer() {
+    if (
+        decodedText === lockedText
+    ) {
 
-        if (
-            !window.confirm(
-                "Clear all captured QR data and start over?"
-            )
-        ) {
-            return;
-        }
+        return;
+
+    }
 
 
-        chunks.length =
-            0;
+    /*
+     * Avoid repeatedly updating UI for the
+     * same currently-visible QR.
+     */
+
+    if (
+        decodedText === pendingText
+    ) {
+
+        return;
+
+    }
 
 
-        totalChunks =
-            null;
-
-        capturedCount =
-            0;
-
-        pendingText =
-            null;
-
-        lockedText =
-            null;
+    pendingText =
+        decodedText;
 
 
-        expectedCount.value =
-            "";
+    pendingData.value =
+        decodedText;
 
-        expectedCount.disabled =
-            false;
 
-        startTransferBtn.disabled =
-            false;
+    lastDetectionTime =
+        Date.now();
 
+
+    if (totalChunks === null) {
+
+        pendingInfo.textContent =
+            "QR detected. Enter expected count and start transfer.";
 
         captureBtn.disabled =
             true;
 
-        downloadBtn.disabled =
+        return;
+
+    }
+
+
+    if (
+        capturedCount >= totalChunks
+    ) {
+
+        captureBtn.disabled =
             true;
 
+        return;
 
-        pendingInfo.textContent =
-            "Waiting for a QR...";
+    }
 
-        pendingData.value =
-            "";
 
-        assembledOutput.value =
-            "";
+    pendingInfo.textContent =
+        `QR detected: ${
+            decodedText.length
+        } characters. Ready for capture #${
+            capturedCount + 1
+        }.`;
 
+    captureBtn.disabled =
+        false;
+
+
+    setMessage(
+        `Detected ${decodedText.length} characters.`,
+        "success"
+    );
+
+
+    setDebug(
+        `QR decoded successfully. Length: ${
+            decodedText.length
+        } characters.`
+    );
+
+}
+
+
+function startTransfer() {
+
+    const count =
+        Number.parseInt(
+            expectedCount.value,
+            10
+        );
+
+
+    if (
+        !Number.isInteger(count) ||
+        count < 1
+    ) {
+
+        setMessage(
+            "Enter a valid expected QR count.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    totalChunks =
+        count;
+
+
+    expectedCount.disabled =
+        true;
+
+    startTransferBtn.disabled =
+        true;
+
+
+    renderGrid();
+
+    updateProgress();
+
+
+    setMessage(
+        `Ready for ${totalChunks} QR codes.`,
+        "success"
+    );
+
+
+    /*
+     * If a QR was already detected before
+     * Start Transfer was pressed, allow it
+     * to be captured now.
+     */
+
+    if (
+        pendingText &&
+        pendingText !== lockedText
+    ) {
+
+        captureBtn.disabled =
+            false;
+
+    }
+
+}
+
+
+function capturePendingChunk() {
+
+    if (
+        !pendingText ||
+        totalChunks === null
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        capturedCount >= totalChunks
+    ) {
+
+        return;
+
+    }
+
+
+    /*
+     * Store exact raw text.
+     *
+     * No trim.
+     * No newline.
+     * No spaces.
+     */
+
+    chunks.push(
+        pendingText
+    );
+
+
+    capturedCount++;
+
+
+    lockedText =
+        pendingText;
+
+
+    pendingText =
+        null;
+
+
+    captureBtn.disabled =
+        true;
+
+
+    pendingData.value =
+        "";
+
+
+    renderGrid();
+
+    updateProgress();
+
+    rebuildOutput();
+
+
+    if (
+        navigator.vibrate
+    ) {
+
+        navigator.vibrate(60);
+
+    }
+
+
+    if (
+        capturedCount === totalChunks
+    ) {
+
+        setMessage(
+            "All QR codes captured.",
+            "success"
+        );
+
+    } else {
+
+        setMessage(
+            `Captured ${capturedCount}/${totalChunks}. Change to the next QR.`,
+            "success"
+        );
+
+    }
+
+}
+
+
+function renderGrid() {
+
+    chunkGrid.innerHTML =
+        "";
+
+
+    if (totalChunks === null) {
+        return;
+    }
+
+
+    const fragment =
+        document.createDocumentFragment();
+
+
+    for (
+        let i = 1;
+        i <= totalChunks;
+        i++
+    ) {
+
+        const cell =
+            document.createElement(
+                "div"
+            );
+
+
+        cell.className =
+            "chunk";
+
+
+        if (
+            i <= capturedCount
+        ) {
+
+            cell.classList.add(
+                "captured"
+            );
+
+        }
+
+
+        cell.textContent =
+            i;
+
+
+        fragment.appendChild(
+            cell
+        );
+
+    }
+
+
+    chunkGrid.appendChild(
+        fragment
+    );
+
+}
+
+
+function updateProgress() {
+
+    if (totalChunks === null) {
 
         progressText.textContent =
             "Captured: 0 / ?";
@@ -1270,317 +1284,220 @@
         progressFill.style.width =
             "0%";
 
-        progressFill.classList.remove(
-            "complete"
-        );
-
-
-        chunkGrid.innerHTML =
-            "";
-
-
-        setMessage(
-            "Transfer cleared. Camera remains active."
-        );
-
-
-        setDebug(
-            "Transfer reset."
-        );
+        return;
 
     }
 
 
-    /*
-     * =========================================================
-     * CAMERA
-     * =========================================================
-     */
+    const percentage =
+        capturedCount /
+        totalChunks *
+        100;
 
-    async function startCamera() {
 
-        if (
-            typeof Html5Qrcode === "undefined"
-        ) {
+    progressText.textContent =
+        `Captured: ${
+            capturedCount
+        } / ${
+            totalChunks
+        }`;
 
-            throw new Error(
-                "html5-qrcode failed to load."
-            );
 
-        }
+    progressFill.style.width =
+        `${percentage}%`;
 
 
-        try {
+    downloadBtn.disabled =
+        capturedCount !==
+        totalChunks;
 
-            cameraStatus.textContent =
-                "Camera: requesting access...";
+}
 
 
-            techStatus.textContent =
-                "Scanner: checking native BarcodeDetector...";
+function rebuildOutput() {
 
+    assembledOutput.value =
+        chunks.join("");
 
-            setMessage(
-                "Looking for available cameras..."
-            );
+}
 
 
-            setDebug(
-                "Checking camera support and native BarcodeDetector support."
-            );
+function downloadText() {
 
-
-            const nativeDetectorSupported =
-                typeof BarcodeDetector !==
-                "undefined";
-
-
-            if (nativeDetectorSupported) {
-
-                techStatus.textContent =
-                    "Scanner: native BarcodeDetector preferred";
-
-            } else {
-
-                techStatus.textContent =
-                    "Scanner: ZXing fallback";
-
-            }
-
-
-            const cameras =
-                await Html5Qrcode.getCameras();
-
-
-            if (
-                !cameras ||
-                cameras.length === 0
-            ) {
-
-                throw new Error(
-                    "No cameras found."
-                );
-
-            }
-
-
-            /*
-             * Prefer the rear-facing camera.
-             */
-
-            const preferredCamera =
-                cameras.find(
-                    camera =>
-                        /back|rear|environment/i.test(
-                            camera.label || ""
-                        )
-                )
-                ||
-                cameras[
-                    cameras.length - 1
-                ];
-
-
-            setDebug(
-                `Found ${cameras.length} camera(s). Selected: ${
-                    preferredCamera.label || preferredCamera.id
-                }`
-            );
-
-
-            /*
-             * Important:
-             *
-             * This enables html5-qrcode's experimental native
-             * BarcodeDetector path where the browser supports it.
-             *
-             * If unsupported, the library falls back to its
-             * normal QR decoding implementation.
-             */
-
-            scanner =
-                new Html5Qrcode(
-                    "reader",
-                    {
-                        formatsToSupport: [
-                            Html5QrcodeSupportedFormats.QR_CODE
-                        ],
-
-                        experimentalFeatures: {
-                            useBarCodeDetectorIfSupported: true
-                        },
-
-                        verbose: false
-                    }
-                );
-
-
-            /*
-             * Dense QR configuration.
-             *
-             * The scanner needs enough image pixels, but fps is
-             * intentionally not pushed excessively high because
-             * quality/focus is more important than processing the
-             * same blurry frame repeatedly.
-             */
-
-            const config = {
-
-                fps: 15,
-
-                qrbox: (
-                    width,
-                    height
-                ) => {
-
-                    const size =
-                        Math.floor(
-                            Math.min(
-                                width,
-                                height
-                            ) * 0.92
-                        );
-
-
-                    return {
-                        width: size,
-                        height: size
-                    };
-
-                },
-
-
-                disableFlip: true
-
-
-            };
-
-
-            await scanner.start(
-
-                preferredCamera.id,
-
-                config,
-
-                onQrDetected,
-
-                () => {
-                    /*
-                     * No QR in this frame.
-                     * Normal scanner behavior.
-                     */
-                }
-
-            );
-
-
-            cameraDot.classList.add(
-                "active"
-            );
-
-
-            cameraStatus.textContent =
-                "Camera: ACTIVE";
-
-
-            const activeTech =
-                nativeDetectorSupported
-                    ? "native BarcodeDetector preferred"
-                    : "ZXing decoder";
-
-
-            techStatus.textContent =
-                `Scanner: ${activeTech}`;
-
-
-            setMessage(
-                "Camera active. For dense QRs, move closer until the QR occupies most of the preview.",
-                "success"
-            );
-
-
-            setDebug(
-                `Camera started successfully. Decoder preference: ${activeTech}.`
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "Camera startup failed:",
-                error
-            );
-
-
-            cameraDot.classList.remove(
-                "active"
-            );
-
-
-            cameraStatus.textContent =
-                "Camera: FAILED";
-
-
-            techStatus.textContent =
-                "Scanner: unavailable";
-
-
-            const errorMessage =
-                error && error.message
-                    ? error.message
-                    : String(error);
-
-
-            setMessage(
-                `Camera access failed: ${errorMessage}`,
-                "error"
-            );
-
-
-            setDebug(
-                `CAMERA ERROR: ${errorMessage}`
-            );
-
-        }
-
+    if (
+        capturedCount !==
+        totalChunks
+    ) {
+        return;
     }
 
 
-    /*
-     * =========================================================
-     * EVENTS
-     * =========================================================
-     */
+    const output =
+        chunks.join("");
 
-    startTransferBtn.addEventListener(
-        "click",
-        startTransfer
+
+    const blob =
+        new Blob(
+            [output],
+            {
+                type:
+                    "text/plain;charset=utf-8"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        "extracted_data.txt";
+
+
+    document.body.appendChild(
+        link
     );
 
 
-    captureBtn.addEventListener(
-        "click",
-        capturePendingChunk
+    link.click();
+
+
+    link.remove();
+
+
+    setTimeout(
+        () =>
+            URL.revokeObjectURL(url),
+        1000
     );
 
 
-    downloadBtn.addEventListener(
-        "click",
-        downloadText
+    setMessage(
+        "Download started.",
+        "success"
     );
 
+}
 
-    resetBtn.addEventListener(
-        "click",
-        resetTransfer
+
+function resetTransfer() {
+
+    if (
+        !confirm(
+            "Clear all captured data?"
+        )
+    ) {
+        return;
+    }
+
+
+    chunks.length =
+        0;
+
+
+    totalChunks =
+        null;
+
+    capturedCount =
+        0;
+
+    pendingText =
+        null;
+
+    lockedText =
+        null;
+
+
+    expectedCount.value =
+        "";
+
+    expectedCount.disabled =
+        false;
+
+    startTransferBtn.disabled =
+        false;
+
+
+    pendingData.value =
+        "";
+
+    assembledOutput.value =
+        "";
+
+
+    captureBtn.disabled =
+        true;
+
+    downloadBtn.disabled =
+        true;
+
+
+    progressText.textContent =
+        "Captured: 0 / ?";
+
+    progressFill.style.width =
+        "0%";
+
+    chunkGrid.innerHTML =
+        "";
+
+
+    pendingInfo.textContent =
+        "Waiting for QR...";
+
+
+    setMessage(
+        "Transfer reset. Camera remains active."
     );
 
+}
 
-    /*
-     * Start camera immediately.
-     */
 
-    startCamera();
+/*
+ * Events
+ */
+
+startTransferBtn.addEventListener(
+    "click",
+    startTransfer
+);
+
+
+captureBtn.addEventListener(
+    "click",
+    capturePendingChunk
+);
+
+
+downloadBtn.addEventListener(
+    "click",
+    downloadText
+);
+
+
+resetBtn.addEventListener(
+    "click",
+    resetTransfer
+);
+
+
+/*
+ * Start camera immediately.
+ */
+
+startCamera();
 
 </script>
 
