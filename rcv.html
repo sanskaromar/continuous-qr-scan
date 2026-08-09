@@ -928,159 +928,105 @@
 
 
     async function startCamera() {
+    if (typeof Html5Qrcode === "undefined") {
+        cameraStatus.textContent =
+            "Camera: scanner library failed to load";
 
-        if (typeof Html5Qrcode === "undefined") {
+        setMessage(
+            "QR scanner library could not be loaded.",
+            "error"
+        );
 
-            cameraStatus.textContent =
-                "Camera: scanner library failed to load";
-
-            setMessage(
-                "The QR scanner library could not be loaded. Check your internet connection.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        scanner =
-            new Html5Qrcode("reader");
-
-
-        const config = {
-
-            fps: 10,
-
-            qrbox: (
-                width,
-                height
-            ) => {
-
-                const size =
-                    Math.floor(
-                        Math.min(
-                            width,
-                            height
-                        ) * 0.8
-                    );
-
-                return {
-                    width: size,
-                    height: size
-                };
-
-            }
-
-        };
-
-
-        try {
-
-            /*
-             * Prefer rear camera on phones.
-             */
-
-            await scanner.start(
-
-                {
-                    facingMode:  "environment"
-                },
-
-                config,
-
-                onQrDetected,
-
-                () => {
-                    /*
-                     * Ignore normal "no QR found" events.
-                     */
-                }
-
-            );
-
-
-            cameraDot.classList.add(
-                "active"
-            );
-
-            cameraStatus.textContent =
-                "Camera: ACTIVE";
-
-            setMessage(
-                "Camera is active. Point it at the current QR."
-            );
-
-
-        } catch (firstError) {
-
-            console.warn(
-                "Preferred camera failed:",
-                firstError
-            );
-
-
-            try {
-
-                const cameras =
-                    await Html5Qrcode.getCameras();
-
-
-                if (
-                    !cameras ||
-                    cameras.length === 0
-                ) {
-                    throw new Error(
-                        "No camera found."
-                    );
-                }
-
-
-                await scanner.start(
-
-                    cameras[0].id,
-
-                    config,
-
-                    onQrDetected,
-
-                    () => {}
-
-                );
-
-
-                cameraDot.classList.add(
-                    "active"
-                );
-
-                cameraStatus.textContent =
-                    "Camera: ACTIVE";
-
-                setMessage(
-                    "Camera is active using an available webcam."
-                );
-
-
-            } catch (secondError) {
-
-                console.error(
-                    secondError
-                );
-
-
-                cameraStatus.textContent =
-                    "Camera: FAILED";
-
-                setMessage(
-                    "Camera access failed. Check browser permissions. On phones, camera access usually requires HTTPS or localhost rather than opening the HTML file directly.",
-                    "error"
-                );
-
-            }
-
-        }
-
+        return;
     }
+
+    const config = {
+        fps: 10,
+
+        qrbox: (width, height) => {
+            const size = Math.floor(
+                Math.min(width, height) * 0.8
+            );
+
+            return {
+                width: size,
+                height: size
+            };
+        }
+    };
+
+    cameraDot.classList.remove("active");
+
+    cameraStatus.textContent =
+        "Camera: looking for cameras...";
+
+    setMessage(
+        "Requesting camera access..."
+    );
+
+    try {
+        /*
+         * Ask the browser for permission and enumerate cameras.
+         *
+         * On many phones, camera labels may initially be empty until
+         * permission has been granted.
+         */
+        const cameras = await Html5Qrcode.getCameras();
+
+        if (!cameras || cameras.length === 0) {
+            throw new Error("No cameras found.");
+        }
+
+        /*
+         * Try to select a rear/back camera.
+         * Fall back to the first available camera.
+         */
+        const preferredCamera =
+            cameras.find(camera =>
+                /back|rear|environment/i.test(camera.label || "")
+            ) || cameras[cameras.length - 1];
+
+        /*
+         * Create ONE fresh scanner instance.
+         */
+        scanner = new Html5Qrcode("reader");
+
+        await scanner.start(
+            preferredCamera.id,
+            config,
+            onQrDetected,
+            () => {
+                /*
+                 * No QR found in this frame.
+                 * This is normal, so do nothing.
+                 */
+            }
+        );
+
+        cameraDot.classList.add("active");
+
+        cameraStatus.textContent =
+            "Camera: ACTIVE";
+
+        setMessage(
+            `Camera active: ${preferredCamera.label || "camera"}`,
+            "success"
+        );
+
+    } catch (error) {
+        console.error("Camera startup failed:", error);
+
+        cameraDot.classList.remove("active");
+
+        cameraStatus.textContent =
+            "Camera: FAILED";
+
+        setMessage(
+            `Camera access failed: ${error.message}`,
+            "error"
+        );
+    }
+}
 
 
     captureBtn.addEventListener(
