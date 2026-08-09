@@ -2,12 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
-<meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
->
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>QR Text Receiver</title>
 
 <style>
@@ -50,12 +45,7 @@ body {
     min-height: 100vh;
     background: var(--bg);
     color: var(--text);
-    font-family:
-        system-ui,
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .app {
@@ -634,7 +624,7 @@ async function startCamera() {
             "Camera: requesting...";
 
         setMessage(
-            "Requesting high-resolution camera..."
+            "Requesting 1080p camera..."
         );
 
 
@@ -659,13 +649,6 @@ async function startCamera() {
             "Native BarcodeDetector";
 
 
-        /*
-         * Request high resolution.
-         *
-         * exact is deliberately avoided because some
-         * Android browsers reject unsupported resolutions.
-         */
-
         const constraints = {
 
             audio: false,
@@ -677,11 +660,11 @@ async function startCamera() {
                 },
 
                 width: {
-                    ideal: 3840
+                    ideal: 1920
                 },
 
                 height: {
-                    ideal: 2160
+                    ideal: 1080
                 },
 
                 frameRate: {
@@ -711,10 +694,6 @@ async function startCamera() {
         await video.play();
 
 
-        /*
-         * Report actual camera settings.
-         */
-
         const settings =
             videoTrack.getSettings();
 
@@ -734,10 +713,6 @@ async function startCamera() {
         );
 
 
-        /*
-         * Enable zoom if the camera exposes it.
-         */
-
         setupZoom();
 
 
@@ -751,7 +726,7 @@ async function startCamera() {
 
 
         setMessage(
-            "High-resolution camera active. Position the QR so it fills most of the preview.",
+            "1080p camera active. Position the QR so it fills most of the preview.",
             "success"
         );
 
@@ -880,11 +855,8 @@ function setupZoom() {
 
 
 /*
- * Direct native scan loop.
- *
- * requestAnimationFrame means the detector receives
- * frames as quickly as the browser can practically
- * provide them.
+ * Continuous direct native QR scanning.
+ * No throttling or pause optimizations added.
  */
 
 async function scanLoop() {
@@ -922,12 +894,8 @@ async function scanLoop() {
                 results.length > 0
             ) {
 
-                const decodedText =
-                    results[0].rawValue;
-
-
                 handleDetectedQr(
-                    decodedText
+                    results[0].rawValue
                 );
 
             } else {
@@ -940,11 +908,6 @@ async function scanLoop() {
         }
 
     } catch (error) {
-
-        /*
-         * Do not stop the scanner on a single
-         * bad frame.
-         */
 
         console.warn(
             "Scan error:",
@@ -968,11 +931,6 @@ function handleDetectedQr(decodedText) {
         "QR DETECTED";
 
 
-    /*
-     * If this is the QR already captured,
-     * ignore it completely.
-     */
-
     if (
         decodedText === lockedText
     ) {
@@ -981,11 +939,6 @@ function handleDetectedQr(decodedText) {
 
     }
 
-
-    /*
-     * Avoid repeatedly updating UI for the
-     * same currently-visible QR.
-     */
 
     if (
         decodedText === pendingText
@@ -1105,12 +1058,6 @@ function startTransfer() {
     );
 
 
-    /*
-     * If a QR was already detected before
-     * Start Transfer was pressed, allow it
-     * to be captured now.
-     */
-
     if (
         pendingText &&
         pendingText !== lockedText
@@ -1144,14 +1091,6 @@ function capturePendingChunk() {
 
     }
 
-
-    /*
-     * Store exact raw text.
-     *
-     * No trim.
-     * No newline.
-     * No spaces.
-     */
 
     chunks.push(
         pendingText
@@ -1465,37 +1404,26 @@ function resetTransfer() {
 }
 
 
-/*
- * Events
- */
-
 startTransferBtn.addEventListener(
     "click",
     startTransfer
 );
-
 
 captureBtn.addEventListener(
     "click",
     capturePendingChunk
 );
 
-
 downloadBtn.addEventListener(
     "click",
     downloadText
 );
-
 
 resetBtn.addEventListener(
     "click",
     resetTransfer
 );
 
-
-/*
- * Start camera immediately.
- */
 
 startCamera();
 
