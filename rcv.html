@@ -291,6 +291,42 @@
         next QR on the source computer.
     </p>
 
+        <section class="card">
+    <label for="expectedCount">
+        How many QR codes will you scan?
+    </label>
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+        <input
+            id="expectedCount"
+            type="number"
+            min="1"
+            inputmode="numeric"
+            placeholder="Example: 50"
+            style="
+                flex:1;
+                padding:12px;
+                border-radius:8px;
+                border:1px solid var(--border);
+                background:var(--card2);
+                color:var(--text);
+                font:inherit;
+            "
+        >
+
+        <button
+            id="setCountBtn"
+            type="button"
+            style="
+                background:var(--primary);
+                color:white;
+            "
+        >
+            Start Transfer
+        </button>
+    </div>
+</section>
+
     <section class="card">
 
         <div class="camera-status">
@@ -412,6 +448,16 @@
     const chunks = new Map();
 
     let totalChunks = null;
+let capturedCount = 0;
+let pendingText = null;
+
+const expectedCount =
+    document.getElementById("expectedCount");
+
+const setCountBtn =
+    document.getElementById("setCountBtn");
+
+    let totalChunks = null;
 
     let pendingChunk = null;
 
@@ -513,76 +559,60 @@
 
     function onQrDetected(decodedText) {
 
-        const parsed =
-            parsePayload(decodedText);
+    /*
+     * Do not allow scanning until the user has
+     * specified the expected number of QR codes.
+     */
 
-        if (!parsed) {
-
-            pendingChunk = null;
-
-            captureBtn.disabled = true;
-
-            pendingInfo.textContent =
-                "Invalid QR format.";
-
-            pendingData.value =
-                decodedText;
-
-            return;
-        }
-
-
-        /*
-         * Ignore repeated detections of the exact same
-         * QR while it remains visible.
-         */
-
-        if (
-            pendingChunk &&
-            pendingChunk.index === parsed.index &&
-            pendingChunk.total === parsed.total &&
-            pendingChunk.data === parsed.data
-        ) {
-            return;
-        }
-
-
-        /*
-         * If this chunk was already captured,
-         * do not make it capturable again.
-         */
-
-        if (chunks.has(parsed.index)) {
-
-            pendingChunk = null;
-
-            captureBtn.disabled = true;
-
-            pendingInfo.textContent =
-                `Chunk ${parsed.index}/${parsed.total} already captured.`;
-
-            pendingData.value =
-                parsed.data;
-
-            return;
-        }
-
-
-        pendingChunk = parsed;
+    if (!totalChunks) {
+        pendingChunk = null;
+        captureBtn.disabled = true;
 
         pendingInfo.textContent =
-            `Ready: Chunk ${parsed.index} of ${parsed.total}`;
+            "First enter the expected number of QR codes.";
 
-        pendingData.value =
-            parsed.data;
+        pendingData.value = decodedText;
 
-        captureBtn.disabled = false;
-
-        setMessage(
-            `QR detected. Verify it, then press "Capture This QR".`
-        );
-
+        return;
     }
+
+
+    /*
+     * If there is already a QR waiting to be captured,
+     * ignore repeated detections of the same visible QR.
+     */
+
+    if (pendingText === decodedText) {
+        return;
+    }
+
+
+    /*
+     * If the previous QR has not yet been manually captured,
+     * keep that QR as the pending one.
+     */
+
+    if (pendingText !== null) {
+        return;
+    }
+
+
+    pendingText = decodedText;
+
+    pendingInfo.textContent =
+        `Ready to capture QR ${capturedCount + 1} of ${totalChunks}`;
+
+    pendingData.value =
+        decodedText;
+
+    captureBtn.disabled = false;
+
+    setMessage(
+        "QR detected. Press Capture This QR, then advance the QR on the Mac.",
+        "success"
+    );
+
+}
 
 
     function renderGrid() {
@@ -622,209 +652,154 @@
     }
 
 
-    function allChunksPresent() {
+function allChunksPresent() {
 
-        if (
-            !totalChunks ||
-            chunks.size !== totalChunks
-        ) {
-            return false;
-        }
+    return (
+        totalChunks !== null &&
+        capturedCount === totalChunks
+    );
 
-        for (
-            let index = 1;
-            index <= totalChunks;
-            index++
-        ) {
-
-            if (!chunks.has(index)) {
-                return false;
-            }
-
-        }
-
-        return true;
-
-    }
+}
 
 
     function updateProgress() {
 
-        const captured =
-            chunks.size;
-
-        if (!totalChunks) {
-
-            progressText.textContent =
-                "Captured: 0 / ?";
-
-            progressFill.style.width =
-                "0%";
-
-            downloadBtn.disabled = true;
-
-            return;
-        }
-
-
-        const percentage =
-            (captured / totalChunks) * 100;
+    if (!totalChunks) {
 
         progressText.textContent =
-            `Captured: ${captured} / ${totalChunks}`;
+            "Captured: 0 / ?";
 
         progressFill.style.width =
-            `${percentage}%`;
+            "0%";
 
+        downloadBtn.disabled = true;
 
-        const complete =
-            allChunksPresent();
-
-        progressFill.classList.toggle(
-            "complete",
-            complete
-        );
-
-        downloadBtn.disabled =
-            !complete;
-
+        return;
     }
+
+
+    const percentage =
+        (capturedCount / totalChunks) * 100;
+
+
+    progressText.textContent =
+        `Captured: ${capturedCount} / ${totalChunks}`;
+
+
+    progressFill.style.width =
+        `${percentage}%`;
+
+
+    const complete =
+        capturedCount === totalChunks;
+
+
+    progressFill.classList.toggle(
+        "complete",
+        complete
+    );
+
+
+    downloadBtn.disabled =
+        !complete;
+
+}
 
 
     function rebuildOutput() {
 
-        if (!totalChunks) {
-            assembledOutput.value = "";
-            return;
-        }
+    let output = "";
 
-        let output = "";
+    for (
+        let index = 1;
+        index <= capturedCount;
+        index++
+    ) {
 
-        for (
-            let index = 1;
-            index <= totalChunks;
-            index++
-        ) {
-
-            if (chunks.has(index)) {
-                output += chunks.get(index);
-            }
-
-        }
-
-        assembledOutput.value =
-            output;
+        output += chunks.get(index);
 
     }
+
+    assembledOutput.value = output;
+
+}
 
 
     function capturePendingChunk() {
 
-        if (!pendingChunk) {
-            return;
-        }
+    if (pendingText === null) {
+        return;
+    }
 
-
-        const {
-            index,
-            total,
-            data
-        } = pendingChunk;
-
-
-        /*
-         * First captured chunk establishes the expected
-         * total chunk count.
-         */
-
-        if (totalChunks === null) {
-
-            totalChunks = total;
-
-            renderGrid();
-
-        }
-
-
-        /*
-         * Reject data from another transfer.
-         */
-
-        if (total !== totalChunks) {
-
-            setMessage(
-                `Rejected chunk ${index}: expected ${totalChunks} total chunks, received ${total}.`,
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        if (chunks.has(index)) {
-
-            setMessage(
-                `Chunk ${index} is already stored.`,
-                "warning"
-            );
-
-            return;
-
-        }
-
-
-        chunks.set(
-            index,
-            data
+    if (!totalChunks) {
+        setMessage(
+            "Set the expected number of QR codes first.",
+            "error"
         );
 
+        return;
+    }
 
-        pendingChunk = null;
-
-        captureBtn.disabled = true;
-
-        pendingInfo.textContent =
-            `Chunk ${index} captured successfully.`;
-
-        /*
-         * Keep the raw text visible so you can confirm
-         * what was captured.
-         */
-
-        pendingData.value =
-            data;
+    if (capturedCount >= totalChunks) {
+        return;
+    }
 
 
-        renderGrid();
+    /*
+     * Store strictly in capture order.
+     *
+     * First captured QR becomes chunk 1,
+     * second becomes chunk 2, etc.
+     */
 
-        updateProgress();
+    capturedCount++;
 
-        rebuildOutput();
-
-
-        if (navigator.vibrate) {
-            navigator.vibrate(50);
-        }
+    chunks.set(
+        capturedCount,
+        pendingText
+    );
 
 
-        if (allChunksPresent()) {
+    pendingInfo.textContent =
+        `QR ${capturedCount} captured successfully.`;
 
-            setMessage(
-                "All chunks captured. Text is complete and ready to download.",
-                "success"
-            );
+    pendingData.value =
+        pendingText;
 
-        } else {
+    pendingText = null;
 
-            setMessage(
-                `Chunk ${index} captured. Advance to the next QR.`,
-                "success"
-            );
+    captureBtn.disabled = true;
 
-        }
+
+    renderGrid();
+
+    updateProgress();
+
+    rebuildOutput();
+
+
+    if (navigator.vibrate) {
+        navigator.vibrate(50);
+    }
+
+
+    if (capturedCount === totalChunks) {
+
+        setMessage(
+            "All QR codes captured. Text is complete.",
+            "success"
+        );
+
+    } else {
+
+        setMessage(
+            `QR ${capturedCount} captured. Advance to QR ${capturedCount + 1}.`,
+            "success"
+        );
 
     }
+
+}
 
 
     function downloadText() {
@@ -1045,6 +1020,65 @@
         "click",
         resetTransfer
     );
+    setCountBtn.addEventListener(
+    "click",
+    () => {
+
+        const count =
+            Number.parseInt(
+                expectedCount.value,
+                10
+            );
+
+
+        if (
+            !Number.isInteger(count) ||
+            count < 1
+        ) {
+
+            setMessage(
+                "Enter a valid number of QR codes.",
+                "error"
+            );
+
+            return;
+
+        }
+
+
+        if (
+            capturedCount > 0
+        ) {
+
+            setMessage(
+                "Clear the current transfer before starting a new one.",
+                "warning"
+            );
+
+            return;
+
+        }
+
+
+        totalChunks = count;
+
+        expectedCount.disabled = true;
+
+        setCountBtn.disabled = true;
+
+
+        renderGrid();
+
+        updateProgress();
+
+
+        setMessage(
+            `Ready to capture ${totalChunks} QR codes.`,
+            "success"
+        );
+
+    }
+);
 
 
     startCamera();
