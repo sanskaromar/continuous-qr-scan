@@ -46,6 +46,11 @@
             --missing: #e5eaf1;
         }
     }
+    @media (max-width: 600px) {
+    #reader {
+        min-height: 430px;
+    }
+}
 
     * {
         box-sizing: border-box;
@@ -171,18 +176,19 @@
         background: var(--success);
     }
 
-    #reader {
-        width: 100%;
-        overflow: hidden;
-        border-radius: 12px;
-        background: #000;
-        min-height: 100px;
-    }
+#reader {
+    width: 100%;
+    min-height: 360px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+}
 
-    #reader video {
-        width: 100% !important;
-        border-radius: 12px;
-    }
+#reader video {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: cover;
+}
 
     .message {
         min-height: 24px;
@@ -1207,200 +1213,148 @@
      */
 
     async function startCamera() {
+    if (typeof Html5Qrcode === "undefined") {
+        cameraStatus.textContent =
+            "Camera: scanner library failed to load";
 
-        if (
-            typeof Html5Qrcode === "undefined"
-        ) {
+        setMessage(
+            "QR scanner library could not be loaded.",
+            "error"
+        );
 
-            cameraStatus.textContent =
-                "Camera: scanner library failed to load";
+        setDebug(
+            "ERROR: Html5Qrcode library is undefined."
+        );
 
-            setMessage(
-                "The QR scanner library could not be loaded. Check internet access.",
-                "error"
+        return;
+    }
+
+    try {
+        cameraStatus.textContent =
+            "Camera: requesting access...";
+
+        setMessage(
+            "Requesting high-resolution camera access..."
+        );
+
+        setDebug(
+            "Looking for available cameras..."
+        );
+
+        const cameras =
+            await Html5Qrcode.getCameras();
+
+        if (!cameras || cameras.length === 0) {
+            throw new Error(
+                "No cameras found by the browser."
             );
-
-            setDebug(
-                "ERROR: Html5Qrcode library is undefined."
-            );
-
-            return;
-
         }
 
+        const preferredCamera =
+            cameras.find(camera =>
+                /back|rear|environment/i.test(
+                    camera.label || ""
+                )
+            )
+            || cameras[cameras.length - 1];
 
+        setDebug(
+            `Found ${cameras.length} camera(s). Starting: ${
+                preferredCamera.label || preferredCamera.id
+            }`
+        );
+
+        scanner = new Html5Qrcode(
+            "reader",
+            {
+                verbose: false
+            }
+        );
+
+        /*
+         * High-density QR optimized configuration.
+         */
         const config = {
+            fps: 20,
 
-            fps: 10,
-
-            qrbox: (
-                width,
-                height
-            ) => {
-
-                const size =
-                    Math.floor(
-                        Math.min(
-                            width,
-                            height
-                        ) * 0.82
-                    );
-
+            /*
+             * Use nearly the entire camera frame.
+             * Dense QR codes need as many pixels as possible.
+             */
+            qrbox: (width, height) => {
+                const size = Math.floor(
+                    Math.min(width, height) * 0.96
+                );
 
                 return {
                     width: size,
                     height: size
                 };
+            },
 
-            }
+            /*
+             * Important for very dense QR codes.
+             */
+            disableFlip: true,
 
+            /*
+             * Allow the scanner to use more of the camera
+             * image instead of aggressively cropping it.
+             */
+            aspectRatio: 1
         };
 
-
-        try {
-
-            cameraStatus.textContent =
-                "Camera: requesting access...";
-
-
-            setMessage(
-                "Looking for available cameras..."
-            );
-
-
-            setDebug(
-                "Calling Html5Qrcode.getCameras()..."
-            );
-
-
-            const cameras =
-                await Html5Qrcode.getCameras();
-
-
-            if (
-                !cameras ||
-                cameras.length === 0
-            ) {
-
-                throw new Error(
-                    "No cameras found by the browser."
-                );
-
+        await scanner.start(
+            preferredCamera.id,
+            config,
+            onQrDetected,
+            () => {
+                // Normal: no QR detected in this frame.
             }
+        );
 
+        cameraDot.classList.add("active");
 
-            /*
-             * Prefer rear/back camera if the browser exposes
-             * useful camera labels.
-             *
-             * Otherwise use the last camera, which is often the
-             * rear camera on phones.
-             */
+        cameraStatus.textContent =
+            "Camera: ACTIVE";
 
-            const preferredCamera =
-                cameras.find(
-                    camera =>
-                        /back|rear|environment/i.test(
-                            camera.label || ""
-                        )
-                )
-                ||
-                cameras[cameras.length - 1];
+        setMessage(
+            `Camera active: ${
+                preferredCamera.label || "camera"
+            }. Move closer until the QR fills most of the preview.`,
+            "success"
+        );
 
+        setDebug(
+            "High-density QR camera scanner started successfully."
+        );
 
-            setDebug(
-                `Found ${cameras.length} camera(s). Starting: ${
-                    preferredCamera.label || preferredCamera.id
-                }`
-            );
+    } catch (error) {
+        console.error(
+            "Camera startup failed:",
+            error
+        );
 
+        cameraDot.classList.remove("active");
 
-            /*
-             * Create one fresh scanner instance.
-             */
+        cameraStatus.textContent =
+            "Camera: FAILED";
 
-            scanner =
-                new Html5Qrcode(
-                    "reader"
-                );
+        const errorMessage =
+            error && error.message
+                ? error.message
+                : String(error);
 
+        setMessage(
+            `Camera access failed: ${errorMessage}`,
+            "error"
+        );
 
-            await scanner.start(
-
-                preferredCamera.id,
-
-                config,
-
-                onQrDetected,
-
-                () => {
-                    /*
-                     * "No QR found" is normal.
-                     *
-                     * Do not display errors for every camera frame.
-                     */
-                }
-
-            );
-
-
-            cameraDot.classList.add(
-                "active"
-            );
-
-
-            cameraStatus.textContent =
-                "Camera: ACTIVE";
-
-
-            setMessage(
-                `Camera active: ${
-                    preferredCamera.label || "camera"
-                }`
-            );
-
-
-            setDebug(
-                "Camera successfully started."
-            );
-
-
-        } catch (error) {
-
-            console.error(
-                "Camera startup failed:",
-                error
-            );
-
-
-            cameraDot.classList.remove(
-                "active"
-            );
-
-
-            cameraStatus.textContent =
-                "Camera: FAILED";
-
-
-            const errorMessage =
-                error && error.message
-                    ? error.message
-                    : String(error);
-
-
-            setMessage(
-                `Camera access failed: ${errorMessage}`,
-                "error"
-            );
-
-
-            setDebug(
-                `CAMERA ERROR: ${errorMessage}`
-            );
-
-        }
-
+        setDebug(
+            `CAMERA ERROR: ${errorMessage}`
+        );
     }
+}
 
 
     /*
