@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous QR Accumulator</title>
+    <!-- Lightweight, trusted open-source scanner library -->
+    <script src="https://unpkg.com"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; margin: 15px; background: #f4f4f9; color: #333; }
+        #reader { width: 100%; max-width: 450px; margin: auto; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; }
+        .btn { background: #007bff; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; margin: 10px; cursor: pointer; }
+        .btn:disabled { background: #cccccc; }
+        #status { margin: 15px; font-weight: bold; font-size: 18px; color: #28a745; }
+        #log { width: 100%; max-width: 450px; height: 150px; margin: auto; display: block; padding: 10px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+    <h2>QR Text Accumulator</h2>
+    <div id="reader"></div>
+    
+    <div id="status">Scanned Chunks: 0</div>
+    
+    <button class="btn" id="copyBtn" onclick="copyToClipboard()" disabled>Copy Full Output</button>
+    <button class="btn" style="background:#dc3545;" onclick="resetSession()">Clear/Reset</button>
+
+    <h3>Accumulated Text Preview:</h3>
+    <textarea id="log" readonly placeholder="Your scanned QR data will append here..."></textarea>
+
+    <script>
+        let accumulatedText = "";
+        let scanCount = 0;
+        let lastScannedData = ""; 
+
+        const html5QrcodeScanner = new Html5Qrcode("reader");
+        
+        html5QrcodeScanner.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (decodedText) => {
+                // Prevent duplicate entries if the camera lingers on the same QR code
+                if (decodedText !== lastScannedData) {
+                    lastScannedData = decodedText;
+                    
+                    // If your sender script formats text with prefix metadata (e.g. "1/50|DATA")
+                    // this cleans it up to extract just the raw data.
+                    let rawData = decodedText;
+                    if (decodedText.includes('|')) {
+                        const parts = decodedText.split('|');
+                        if (parts.length >= 2) {
+                            rawData = parts.slice(1).join('|'); // Extracts everything after the first '|'
+                        }
+                    }
+
+                    accumulatedText += rawData; // Appends data directly without spaces or breaks
+                    scanCount++;
+                    
+                    // Update UI elements
+                    document.getElementById("status").innerText = `Scanned Chunks: ${scanCount}`;
+                    document.getElementById("log").value = accumulatedText;
+                    document.getElementById("copyBtn").disabled = false;
+                    
+                    // Small visual/haptic feedback if phone supports it
+                    if (navigator.vibrate) navigator.vibrate(100);
+                }
+            },
+            (errorMessage) => { /* Keep hunting for QR codes quietly */ }
+        );
+
+        function copyToClipboard() {
+            const logArea = document.getElementById("log");
+            logArea.select();
+            logArea.setSelectionRange(0, 99999); // Mobile compatibility constraint
+            navigator.clipboard.writeText(accumulatedText);
+            alert("All appended text copied to clipboard successfully!");
+        }
+
+        function resetSession() {
+            if (confirm("Clear current session?")) {
+                accumulatedText = "";
+                lastScannedData = "";
+                scanCount = 0;
+                document.getElementById("status").innerText = `Scanned Chunks: 0`;
+                document.getElementById("log").value = "";
+                document.getElementById("copyBtn").disabled = true;
+            }
+        }
+    </script>
+</body>
+</html>
